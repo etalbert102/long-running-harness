@@ -52,10 +52,22 @@ async def push_status(session_id: str, update_type: str, payload: dict[str, Any]
         logger.warning(f"[dashboard] Push error: {e}")
 
 
+_session_started_at: str | None = None
+
+
+def _get_started_at() -> str:
+    global _session_started_at
+    if _session_started_at is None:
+        from datetime import datetime, timezone
+        _session_started_at = datetime.now(timezone.utc).isoformat()
+    return _session_started_at
+
+
 async def push_session_start(session_id: str) -> None:
     await push_status(session_id, "status", {
         "state": "running",
         "phase": "plan",
+        "startedAt": _get_started_at(),
         "currentFeature": None,
     })
 
@@ -64,6 +76,7 @@ async def push_phase_change(session_id: str, phase: str, feature_name: str | Non
     await push_status(session_id, "status", {
         "state": "running",
         "phase": phase,
+        "startedAt": _get_started_at(),
         "currentFeature": feature_name,
     })
 
@@ -123,6 +136,7 @@ async def push_session_complete(session_id: str) -> None:
     await push_status(session_id, "status", {
         "state": "complete",
         "phase": "done",
+        "startedAt": _get_started_at(),
         "currentFeature": None,
     })
 
@@ -131,6 +145,7 @@ async def push_session_error(session_id: str, error: str) -> None:
     await push_status(session_id, "status", {
         "state": "error",
         "phase": "error",
+        "startedAt": _get_started_at(),
         "currentFeature": None,
         "error": error,
     })
