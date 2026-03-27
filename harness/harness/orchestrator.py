@@ -2,6 +2,7 @@
 
 import asyncio
 import logging
+import subprocess
 import time
 import uuid
 from pathlib import Path
@@ -9,6 +10,7 @@ from pathlib import Path
 from harness.agents.planner import run_planner
 from harness.agents.generator import run_generator
 from harness.agents.evaluator import run_evaluator
+from harness.client import OUTPUT_DIR
 from harness.progress import read_progress, get_feature_summary, FEATURE_LIST_PATH
 from harness.validators import run_all_validators, all_passed, format_failures
 from harness import dashboard
@@ -19,6 +21,52 @@ logger = logging.getLogger("harness.orchestrator")
 MAX_VALIDATOR_RETRIES = 3
 MAX_EVALUATOR_RETRIES = 2
 DELAY_BETWEEN_SESSIONS = 3  # seconds
+
+
+async def push_git_commits(session_id: str) -> None:
+    """Read recent git commits from output dir and push to dashboard."""
+    try:
+        result = subprocess.run(
+            ["git", "log", "--oneline", "--format=%H|%s|%aI", "-10"],
+            cwd=str(OUTPUT_DIR),
+            capture_output=True,
+            text=True,
+            timeout=5,
+        )
+        if result.returncode != 0:
+            return
+
+        for line in result.stdout.strip().split("\n"):
+            if not line or "|" not in line:
+                continue
+            parts = line.split("|", 2)
+            if len(parts) < 3:
+                continue
+            sha, message, timestamp = parts
+
+            # Count files changed in this commit
+            diff_result = subprocess.run(
+                ["git", "diff", "--name-only", f"{sha}~1", sha],
+                cwd=str(OUTPUT_DIR),
+                capture_output=True,
+                text=True,
+                timeout=5,
+            )
+            files_changed = len([l for l in diff_result.stdout.strip().split("\n") if l]) if diff_result.returncode == 0 else 0
+
+            await dashboard.push_commit(session_id, sha[:7], message, files_changed)
+    except Exception as e:
+        logger.warning(f"[orchestrator] Failed to push git commits: {e}")
+
+
+async def push_timeline_event(session_id: str, label: str, duration_ms: int = 0) -> None:
+    """Push a timeline event to the dashboard."""
+    from datetime import datetime, timezone
+    await dashboard.push_status(session_id, "timeline", {
+        "timestamp": datetime.now(timezone.utc).isoformat(),
+        "label": label,
+        "duration": duration_ms,
+    })
 
 
 class HarnessSession:
@@ -59,7 +107,9 @@ async def run_orchestrator(app_spec_path: Path) -> None:
             logger.info("[orchestrator] No feature_list.json — running planner")
             await dashboard.push_phase_change(session.session_id, "plan")
 
+            planner_start = time.time()
             success = await run_planner(app_spec_path)
+            planner_ms = int((time.time() - planner_start) * 1000)
             if not success:
                 await dashboard.push_session_error(session.session_id, "Planner failed to create feature_list.json")
                 logger.error("[orchestrator] Planner failed — aborting")
@@ -68,6 +118,7 @@ async def run_orchestrator(app_spec_path: Path) -> None:
             progress = read_progress()
             if progress:
                 await dashboard.push_feature_update(session.session_id, get_feature_summary(progress))
+                await push_timeline_event(session.session_id, f"Planner: {progress.total} features", planner_ms)
                 logger.info(f"[orchestrator] Planner created {progress.total} features")
 
         # Phase 2: Build loop
@@ -92,6 +143,7 @@ async def run_orchestrator(app_spec_path: Path) -> None:
             session.iteration += 1
             feature_id = feature.get("id", "unknown")
             feature_name = feature.get("description", "unnamed")
+            feature_start_time = time.time()
 
             logger.info(
                 f"[orchestrator] Iteration {session.iteration}: "
@@ -163,8 +215,15 @@ async def run_orchestrator(app_spec_path: Path) -> None:
                 )
 
                 if eval_result["passed"]:
+                    feature_elapsed_ms = int((time.time() - feature_start_time) * 1000) if feature_start_time else 0
                     logger.info(f"[orchestrator] Feature {feature_id} PASSED (score: {eval_result['score']})")
                     feature_complete = True
+                    await push_timeline_event(
+                        session.session_id,
+                        f"{feature_id} passed ({eval_result['score']}/10)",
+                        feature_elapsed_ms,
+                    )
+                    await push_git_commits(session.session_id)
                     break
                 else:
                     logger.warning(

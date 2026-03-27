@@ -37,13 +37,13 @@ export async function POST(request: NextRequest) {
   const key = buildKey(sessionId, type);
 
   try {
-    if (type === "commits") {
-      // Prepend to array, cap at 20
-      const existing = await redis.get<CommitEntry[]>(key);
-      const commits = existing ?? [];
-      const incoming = payload as CommitEntry;
-      commits.unshift(incoming);
-      const capped = commits.slice(0, 20);
+    if (type === "commits" || type === "timeline") {
+      // Append to array, cap at 50 for timeline, 20 for commits
+      const cap = type === "timeline" ? 50 : 20;
+      const existing = await redis.get<unknown[]>(key);
+      const arr = existing ?? [];
+      arr.push(payload);
+      const capped = arr.slice(-cap);
       await redis.set(key, capped, { ex: TTL });
     } else {
       await redis.set(key, payload, { ex: TTL });

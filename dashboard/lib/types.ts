@@ -70,6 +70,12 @@ export interface CostData {
   byAgent: AgentCosts;
 }
 
+export interface TimelineEvent {
+  timestamp: string;
+  label: string;
+  duration?: number;
+}
+
 export interface DashboardState {
   sessionId: string | null;
   status: SessionStatus | null;
@@ -78,6 +84,7 @@ export interface DashboardState {
   commits: CommitEntry[] | null;
   evaluator: EvaluatorData | null;
   cost: CostData | null;
+  timeline: TimelineEvent[] | null;
 }
 
 export const EMPTY_STATE: DashboardState = {
@@ -88,4 +95,5 @@ export const EMPTY_STATE: DashboardState = {
   commits: null,
   evaluator: null,
   cost: null,
+  timeline: null,
 };

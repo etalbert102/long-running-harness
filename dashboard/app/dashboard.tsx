@@ -9,6 +9,7 @@ import { SprintInfo } from "@/components/sprint-info";
 import { CommitFeed } from "@/components/commit-feed";
 import { EvaluatorCard } from "@/components/evaluator-card";
 import { CostTracker } from "@/components/cost-tracker";
+import { TimelineCard } from "@/components/timeline-card";
 
 type Action =
   | { type: "SET_STATE"; payload: DashboardState }
@@ -134,6 +135,11 @@ export function Dashboard() {
             {/* Evaluator */}
             <div className="lg:col-span-5">
               <EvaluatorCard data={state.evaluator} />
+            </div>
+
+            {/* Timeline — full width */}
+            <div className="lg:col-span-12">
+              <TimelineCard data={state.status} events={state.timeline} />
             </div>
 
             {/* Commits */}
