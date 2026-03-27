@@ -82,7 +82,7 @@ async def push_sprint(session_id: str, iteration: int, phase: str, feature_name:
 
 
 async def push_commit(session_id: str, sha: str, message: str, files_changed: int) -> None:
-    await push_status(session_id, "commit", {
+    await push_status(session_id, "commits", {
         "sha": sha,
         "message": message,
         "filesChanged": files_changed,
