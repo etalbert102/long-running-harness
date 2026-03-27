@@ -1,0 +1,12 @@
+The gap nobody's filling: a lightweight agent identity layer — not another security platform, but the connective tissue those platforms need to do their jobs.
+
+Every vendor at RSAC is discovering, governing, or protecting agents in isolation.
+
+None of them share a common agent identity format.
+
+If Avistar ships an open standard for agent identity + trust attestation — something Cisco's MCP enforcement, CrowdStrike's discovery, and Cyera's data lineage can all plug into — you're not competing with them, you're the thing they all depend on.
+
+Small surface, strategic position.
+
+Tags:
+Avistar Cisco CrowdStrike Cyera agent identity security platforms open standard
