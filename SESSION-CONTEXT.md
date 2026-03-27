@@ -1,22 +1,24 @@
 ## Status
 
-Harness core and dashboard both built. Dashboard compiles clean. Harness modules all import. Ready for Vercel deployment + end-to-end testing.
+Harness v0.1 complete and proven. mini-jwt built autonomously (38/38 features, 76 tests, 96% coverage, 70 min, $9.27). Dashboard deployed to Vercel with session history. Ready for real AIT spec run.
 
 ## In-Flight
 
-- Dashboard needs Vercel link + Upstash Redis provisioning
-- Harness needs end-to-end test against a trivial spec before running on AIT spec
+- History view UI shipped, needs more runs to populate
+- Architect agent + multi-orchestrator built but untested on a real multi-service spec
 
 ## Key Details
 
-- `claude-agent-sdk==0.1.50` installed and verified in harness/.venv
-- Dashboard builds clean (Next.js 16, shadcn/ui, Upstash Redis)
-- App spec defines: JWT profile (AIT), TypeScript SDK, verification service, IETF-style spec doc
-- Working on `dev` branch, main is clean
+- Harness repo: github.com/shawnpetros/long-running-harness (main merged)
+- Dashboard: agent-id-shawnpetros-projects.vercel.app (Upstash Redis, INGEST_SECRET set)
+- mini-jwt proof: github.com/AvistarAI/mini-jwt
+- claude-agent-sdk==0.1.50 in harness/.venv (Python 3.14)
+- Vercel project `agent-id` with rootDirectory=dashboard
 
 ## Next Steps
 
-1. Deploy dashboard to Vercel (link, add Upstash, set INGEST_SECRET)
-2. Test harness end-to-end on trivial spec
-3. Run harness on AIT app_spec.md
-4. Human review of generated output
+1. Run harness on real AIT app_spec.md (multi-orchestrator mode)
+2. Add integration test phase post-completion
+3. Add intermediate checkpoints for multi-service builds
+4. Build tabbed dashboard for parallel harness instances
+5. Historical comparison view across runs
