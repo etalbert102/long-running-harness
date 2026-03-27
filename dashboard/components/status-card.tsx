@@ -61,6 +61,7 @@ export function StatusCard({ data }: { data: SessionStatus | null }) {
     <Card className={`shadow-lg ${cfg.glow} border-border/50`}>
       <CardContent className="py-5">
         <div className="flex items-center justify-between">
+          {/* Left: status + phase */}
           <div className="flex items-center gap-5">
             <span className={`text-3xl font-bold font-mono uppercase tracking-widest ${cfg.color}`}>
               {data.state}
@@ -74,20 +75,26 @@ export function StatusCard({ data }: { data: SessionStatus | null }) {
             </div>
           </div>
 
-          <div className="flex items-center gap-6">
-            {data.currentFeature && (
-              <div className="flex flex-col items-end">
-                <span className="text-[10px] uppercase tracking-widest text-muted-foreground/80">Feature</span>
-                <span className="text-sm font-medium truncate max-w-56">{data.currentFeature}</span>
-              </div>
-            )}
-            {data.startedAt && (
-              <div className="flex flex-col items-end">
-                <span className="text-[10px] uppercase tracking-widest text-muted-foreground/80">Elapsed</span>
-                <span className="text-sm font-mono tabular-nums text-foreground/80">{elapsed}</span>
-              </div>
-            )}
-          </div>
+          {/* Center: big elapsed clock */}
+          {data.startedAt && (
+            <div className="flex items-center gap-2">
+              <svg className="h-4 w-4 text-muted-foreground/60" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
+                <circle cx="12" cy="12" r="10" />
+                <path d="M12 6v6l4 2" />
+              </svg>
+              <span className="text-2xl font-mono tabular-nums font-semibold text-foreground/90 tracking-tight">
+                {elapsed}
+              </span>
+            </div>
+          )}
+
+          {/* Right: current feature */}
+          {data.currentFeature && (
+            <div className="flex flex-col items-end">
+              <span className="text-[10px] uppercase tracking-widest text-muted-foreground/80">Feature</span>
+              <span className="text-sm font-medium truncate max-w-56">{data.currentFeature}</span>
+            </div>
+          )}
         </div>
       </CardContent>
     </Card>
