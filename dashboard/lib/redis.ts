@@ -53,11 +53,16 @@ class InMemoryRedis implements RedisLike {
 }
 
 function createRedis(): RedisLike {
-  if (process.env.UPSTASH_REDIS_REST_URL) {
+  // Vercel Marketplace provisions as KV_REST_API_URL/TOKEN
+  // @upstash/redis expects UPSTASH_REDIS_REST_URL/TOKEN
+  const url = process.env.UPSTASH_REDIS_REST_URL || process.env.KV_REST_API_URL;
+  const token = process.env.UPSTASH_REDIS_REST_TOKEN || process.env.KV_REST_API_TOKEN;
+
+  if (url && token) {
     console.log("[redis] Using Upstash Redis");
-    return Redis.fromEnv() as unknown as RedisLike;
+    return new Redis({ url, token }) as unknown as RedisLike;
   }
-  console.log("[redis] No UPSTASH_REDIS_REST_URL — using in-memory store (local dev mode)");
+  console.log("[redis] No Redis credentials found — using in-memory store (local dev mode)");
   return new InMemoryRedis();
 }
 
