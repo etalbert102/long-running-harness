@@ -59,16 +59,6 @@ async def push_git_commits(session_id: str) -> None:
         logger.warning(f"[orchestrator] Failed to push git commits: {e}")
 
 
-async def push_timeline_event(session_id: str, label: str, duration_ms: int = 0) -> None:
-    """Push a timeline event to the dashboard."""
-    from datetime import datetime, timezone
-    await dashboard.push_status(session_id, "timeline", {
-        "timestamp": datetime.now(timezone.utc).isoformat(),
-        "label": label,
-        "duration": duration_ms,
-    })
-
-
 class HarnessSession:
     """Tracks state for a single harness run."""
 
@@ -101,6 +91,17 @@ async def run_orchestrator(app_spec_path: Path) -> None:
 
     await dashboard.push_session_start(session.session_id)
 
+    # Push spec card — extract name/description from the spec file
+    try:
+        spec_text = app_spec_path.read_text()
+        # Extract first heading as name, first paragraph as description
+        spec_lines = [l.strip() for l in spec_text.split("\n") if l.strip()]
+        spec_name = spec_lines[0].lstrip("# ") if spec_lines else app_spec_path.stem
+        spec_desc = next((l for l in spec_lines[1:] if not l.startswith("#") and not l.startswith("---")), "")
+        await dashboard.push_spec(session.session_id, spec_name, spec_desc[:200])
+    except Exception as e:
+        logger.warning(f"[orchestrator] Could not push spec card: {e}")
+
     try:
         # Phase 1: Planning
         if not FEATURE_LIST_PATH.exists():
@@ -118,7 +119,7 @@ async def run_orchestrator(app_spec_path: Path) -> None:
             progress = read_progress()
             if progress:
                 await dashboard.push_feature_update(session.session_id, get_feature_summary(progress))
-                await push_timeline_event(session.session_id, f"Planner: {progress.total} features", planner_ms)
+                await dashboard.push_timeline_event(session.session_id, f"Planner: {progress.total} features", planner_ms)
                 logger.info(f"[orchestrator] Planner created {progress.total} features")
 
         # Phase 2: Build loop
@@ -212,7 +213,7 @@ async def run_orchestrator(app_spec_path: Path) -> None:
                     feature_elapsed_ms = int((time.time() - feature_start_time) * 1000)
                     logger.info(f"[orchestrator] Feature {feature_id} PASSED (validators only, {complexity})")
                     feature_complete = True
-                    await push_timeline_event(
+                    await dashboard.push_timeline_event(
                         session.session_id,
                         f"{feature_id} passed (validators, {complexity})",
                         feature_elapsed_ms,
@@ -238,7 +239,7 @@ async def run_orchestrator(app_spec_path: Path) -> None:
                     feature_elapsed_ms = int((time.time() - feature_start_time) * 1000)
                     logger.info(f"[orchestrator] Feature {feature_id} PASSED (score: {eval_result['score']})")
                     feature_complete = True
-                    await push_timeline_event(
+                    await dashboard.push_timeline_event(
                         session.session_id,
                         f"{feature_id} passed ({eval_result['score']}/10)",
                         feature_elapsed_ms,

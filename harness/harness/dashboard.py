@@ -149,3 +149,21 @@ async def push_session_error(session_id: str, error: str) -> None:
         "currentFeature": None,
         "error": error,
     })
+
+
+async def push_spec(session_id: str, name: str, description: str) -> None:
+    """Push the spec card data — what we're building."""
+    await push_status(session_id, "spec", {
+        "name": name,
+        "description": description,
+    })
+
+
+async def push_timeline_event(session_id: str, label: str, duration_ms: int = 0) -> None:
+    """Push a timeline event (appended to array in dashboard)."""
+    from datetime import datetime, timezone
+    await push_status(session_id, "timeline", {
+        "timestamp": datetime.now(timezone.utc).isoformat(),
+        "label": label,
+        "duration": duration_ms,
+    })

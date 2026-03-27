@@ -107,11 +107,7 @@ async def run_multi_orchestrator(app_spec_path: Path) -> None:
             logger.info(f"[multi] Integration checkpoint: {checkpoint['test']}")
             # TODO: Run integration evaluator here
             # For now, just log it
-            await dashboard.push_status(root_session, "timeline", {
-                "timestamp": _now_iso(),
-                "label": f"Checkpoint: {checkpoint['test'][:60]}",
-                "duration": 0,
-            })
+            await dashboard.push_timeline_event(root_session, f"Checkpoint: {checkpoint['test'][:60]}")
 
     logger.info(f"[multi] All {total_services} services complete!")
     await dashboard.push_session_complete(root_session)
@@ -138,12 +134,7 @@ async def _run_service_harness(
     spec_path = service_output / "app_spec.md"
     spec_path.write_text(focused_spec)
 
-    # Push timeline event
-    await dashboard.push_status(root_session, "timeline", {
-        "timestamp": _now_iso(),
-        "label": f"Starting {name} ({service['type']})",
-        "duration": 0,
-    })
+    await dashboard.push_timeline_event(root_session, f"Starting {name} ({service['type']})")
 
     start = time.time()
 
@@ -167,11 +158,7 @@ async def _run_service_harness(
     elapsed_ms = int((time.time() - start) * 1000)
     logger.info(f"[multi:{name}] Service complete ({elapsed_ms / 1000:.0f}s)")
 
-    await dashboard.push_status(root_session, "timeline", {
-        "timestamp": _now_iso(),
-        "label": f"{name} complete",
-        "duration": elapsed_ms,
-    })
+    await dashboard.push_timeline_event(root_session, f"{name} complete", elapsed_ms)
 
 
 async def _build_shared_contracts(services: dict, root_session: str) -> None:
@@ -195,13 +182,4 @@ async def _build_shared_contracts(services: dict, root_session: str) -> None:
             )
             logger.info(f"[multi] Created contract placeholder: {path}")
 
-    await dashboard.push_status(root_session, "timeline", {
-        "timestamp": _now_iso(),
-        "label": f"Created {len(contracts)} shared contracts",
-        "duration": 0,
-    })
-
-
-def _now_iso() -> str:
-    from datetime import datetime, timezone
-    return datetime.now(timezone.utc).isoformat()
+    await dashboard.push_timeline_event(root_session, f"Created {len(contracts)} shared contracts")
