@@ -49,9 +49,11 @@ export function EvaluatorCard({ data }: { data: EvaluatorData | null }) {
       <CardHeader className="pb-3">
         <div className="flex items-center justify-between">
           <CardTitle className="text-sm font-medium text-muted-foreground/70">Evaluator</CardTitle>
-          <span className="text-xs font-mono text-muted-foreground/80">
-            {Math.round(data.passRate * 100)}% pass rate
-          </span>
+          {data.passRate != null && !isNaN(data.passRate) && (
+            <span className="text-xs font-mono text-muted-foreground/80">
+              {Math.round(data.passRate * 100)}% pass rate
+            </span>
+          )}
         </div>
       </CardHeader>
       <CardContent>
