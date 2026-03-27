@@ -6,6 +6,7 @@ import logging
 import sys
 from pathlib import Path
 
+from harness.multi_orchestrator import run_multi_orchestrator
 from harness.orchestrator import run_orchestrator
 
 
@@ -37,6 +38,11 @@ def parse_args() -> argparse.Namespace:
         "-v", "--verbose",
         action="store_true",
         help="Enable debug logging",
+    )
+    parser.add_argument(
+        "--single",
+        action="store_true",
+        help="Skip architect agent — run as single service (bypass monorepo detection)",
     )
     parser.add_argument(
         "--dashboard-url",
@@ -119,13 +125,18 @@ def main() -> None:
         os.environ["HARNESS_MODEL_EVALUATOR"] = args.model_evaluator
 
     from harness.client import get_model_for_role
+    mode = "single" if args.single else "multi (architect-driven)"
     logger.info(f"Starting harness with spec: {args.spec}")
+    logger.info(f"Mode: {mode}")
     logger.info(f"Models — planner: {get_model_for_role('planner')}, generator: {get_model_for_role('generator')}, evaluator: {get_model_for_role('evaluator')}")
     logger.info(f"Log file: {log_file}")
     if args.dashboard_url:
         logger.info(f"Dashboard: {args.dashboard_url}")
 
-    asyncio.run(run_orchestrator(args.spec.resolve()))
+    if args.single:
+        asyncio.run(run_orchestrator(args.spec.resolve()))
+    else:
+        asyncio.run(run_multi_orchestrator(args.spec.resolve()))
 
 
 if __name__ == "__main__":

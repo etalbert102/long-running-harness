@@ -34,9 +34,11 @@ Create a file called `feature_list.json` in the current directory with this exac
 
 **CRITICAL: Match the number of features to the actual scope of the spec.**
 
-- A tiny library (1-2 modules, <500 LOC output) → **15-25 features**
-- A medium SDK (3-5 modules) → **30-50 features**
-- A large SDK + service (multiple packages) → **60-100 features**
+- A tiny library (1-2 modules, <500 LOC output) → **10-30 features**
+- A medium SDK (3-6 modules, single package) → **50-150 features**
+- A large system (multiple packages, services, APIs) → **200-400 features**
+
+When in doubt, err toward more features with clear scope rather than fewer features with vague scope. Each feature should be completable in a single focused session (5-15 minutes of implementation).
 
 DO NOT inflate the feature list. Each feature should represent a meaningful, testable unit of work — not a single config line or npm install. Merge related setup steps into single features:
 
