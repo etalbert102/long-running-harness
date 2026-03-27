@@ -9,11 +9,19 @@ from pathlib import Path
 from harness.orchestrator import run_orchestrator
 
 
-def setup_logging(verbose: bool = False) -> None:
-    """Configure structured logging."""
+def setup_logging(verbose: bool = False, log_file: str | None = None) -> None:
+    """Configure structured logging to stderr and optionally to a file."""
     level = logging.DEBUG if verbose else logging.INFO
     fmt = "%(asctime)s [%(name)s] %(levelname)s: %(message)s"
-    logging.basicConfig(level=level, format=fmt, stream=sys.stderr)
+
+    handlers: list[logging.Handler] = [logging.StreamHandler(sys.stderr)]
+
+    if log_file:
+        file_handler = logging.FileHandler(log_file, mode="a")
+        file_handler.setFormatter(logging.Formatter(fmt))
+        handlers.append(file_handler)
+
+    logging.basicConfig(level=level, format=fmt, handlers=handlers)
 
 
 def parse_args() -> argparse.Namespace:
@@ -48,12 +56,28 @@ def parse_args() -> argparse.Namespace:
         default="claude-sonnet-4-6",
         help="Model to use for agent sessions (default: claude-sonnet-4-6)",
     )
+    parser.add_argument(
+        "--log-file",
+        type=str,
+        default=None,
+        help="Path to log file (in addition to stderr). Default: harness-{timestamp}.log",
+    )
     return parser.parse_args()
 
 
 def main() -> None:
     args = parse_args()
-    setup_logging(args.verbose)
+
+    # Default log file if not specified
+    import os
+    from datetime import datetime
+    log_file = args.log_file
+    if log_file is None:
+        log_dir = Path(__file__).resolve().parent.parent / "logs"
+        log_dir.mkdir(exist_ok=True)
+        log_file = str(log_dir / f"harness-{datetime.now().strftime('%Y%m%d-%H%M%S')}.log")
+
+    setup_logging(args.verbose, log_file=log_file)
 
     logger = logging.getLogger("harness.main")
 
@@ -63,7 +87,6 @@ def main() -> None:
         sys.exit(1)
 
     # Set environment for dashboard integration
-    import os
     if args.dashboard_url:
         os.environ["DASHBOARD_URL"] = args.dashboard_url
     if args.dashboard_secret:
@@ -73,6 +96,7 @@ def main() -> None:
 
     logger.info(f"Starting harness with spec: {args.spec}")
     logger.info(f"Model: {os.environ.get('HARNESS_MODEL', 'claude-sonnet-4-6')}")
+    logger.info(f"Log file: {log_file}")
     if args.dashboard_url:
         logger.info(f"Dashboard: {args.dashboard_url}")
 

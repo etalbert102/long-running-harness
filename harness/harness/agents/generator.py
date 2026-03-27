@@ -71,8 +71,8 @@ async def run_generator(feature: dict, evaluator_feedback: str | None = None) ->
     try:
         async for message in query(prompt=prompt, options=options):
             if isinstance(message, ResultMessage):
-                cost_usd = message.cost_usd or 0.0
-                logger.info(f"[generator] Feature {feature_id} session complete: cost=${cost_usd:.4f}")
+                cost_usd = message.total_cost_usd or 0.0
+                logger.info(f"[generator] Feature {feature_id} session complete: cost=${cost_usd:.4f}, turns={message.num_turns}")
     except Exception as e:
         error = str(e)
         logger.error(f"[generator] Feature {feature_id} failed: {error}")

@@ -109,8 +109,8 @@ async def run_evaluator(feature: dict) -> dict:
                     if isinstance(block, TextBlock):
                         response_text += block.text
             elif isinstance(message, ResultMessage):
-                cost_usd = message.cost_usd or 0.0
-                logger.info(f"[evaluator] Feature {feature_id} evaluation complete: cost=${cost_usd:.4f}")
+                cost_usd = message.total_cost_usd or 0.0
+                logger.info(f"[evaluator] Feature {feature_id} evaluation complete: cost=${cost_usd:.4f}, turns={message.num_turns}")
     except Exception as e:
         logger.error(f"[evaluator] Feature {feature_id} evaluation failed: {e}")
         return {

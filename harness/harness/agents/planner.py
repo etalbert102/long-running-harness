@@ -46,8 +46,9 @@ async def run_planner(app_spec_path: Path) -> bool:
     result_text = ""
     async for message in query(prompt=prompt, options=options):
         if isinstance(message, ResultMessage):
-            logger.info(f"[planner] Session complete: cost=${message.cost_usd:.4f}")
-            result_text = f"cost={message.cost_usd:.4f}"
+            cost = message.total_cost_usd or 0.0
+            logger.info(f"[planner] Session complete: cost=${cost:.4f}, turns={message.num_turns}")
+            result_text = f"cost={cost:.4f}"
 
     # Verify output
     feature_list = OUTPUT_DIR / "feature_list.json"
