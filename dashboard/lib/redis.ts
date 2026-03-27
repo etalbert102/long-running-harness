@@ -12,8 +12,20 @@ interface RedisLike {
   del(key: string): Promise<number>;
 }
 
+// Persist across hot reloads in dev
+const globalStore = (globalThis as Record<string, unknown>).__inMemoryRedisStore as Map<string, { value: unknown; expiresAt?: number }> | undefined;
+
 class InMemoryRedis implements RedisLike {
-  private store = new Map<string, { value: unknown; expiresAt?: number }>();
+  private store: Map<string, { value: unknown; expiresAt?: number }>;
+
+  constructor() {
+    if (globalStore) {
+      this.store = globalStore;
+    } else {
+      this.store = new Map();
+      (globalThis as Record<string, unknown>).__inMemoryRedisStore = this.store;
+    }
+  }
 
   async get<T = unknown>(key: string): Promise<T | null> {
     const entry = this.store.get(key);
