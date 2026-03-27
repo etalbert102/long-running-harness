@@ -40,9 +40,13 @@ export function StatusCard({ data }: { data: SessionStatus | null }) {
   useEffect(() => {
     if (!data?.startedAt) return;
     setElapsed(formatElapsed(data.startedAt));
+
+    // Don't tick when the job is finished — freeze the clock
+    if (data.state === "complete" || data.state === "error") return;
+
     const interval = setInterval(() => setElapsed(formatElapsed(data.startedAt)), 1000);
     return () => clearInterval(interval);
-  }, [data?.startedAt]);
+  }, [data?.startedAt, data?.state]);
 
   if (!data) {
     return (

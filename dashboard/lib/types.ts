@@ -76,6 +76,22 @@ export interface TimelineEvent {
   duration?: number;
 }
 
+export interface SpecData {
+  name: string;
+  description: string;
+}
+
+export interface SessionSummary {
+  sessionId: string;
+  completedAt: string;
+  specName: string | null;
+  featuresTotal: number;
+  featuresPassing: number;
+  totalCost: number;
+  totalTimeMs: number;
+  avgEvaluatorScore: number | null;
+}
+
 export interface DashboardState {
   sessionId: string | null;
   status: SessionStatus | null;
@@ -85,6 +101,7 @@ export interface DashboardState {
   evaluator: EvaluatorData | null;
   cost: CostData | null;
   timeline: TimelineEvent[] | null;
+  spec: SpecData | null;
 }
 
 export const EMPTY_STATE: DashboardState = {
@@ -96,4 +113,5 @@ export const EMPTY_STATE: DashboardState = {
   evaluator: null,
   cost: null,
   timeline: null,
+  spec: null,
 };

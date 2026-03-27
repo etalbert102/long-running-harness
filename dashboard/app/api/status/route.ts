@@ -19,7 +19,7 @@ export async function GET() {
 
     const keys = getAllKeys(sessionId);
     const values = await redis.mget(...keys);
-    const [status, features, sprint, commits, evaluator, cost, timeline] = values;
+    const [status, features, sprint, commits, evaluator, cost, timeline, spec] = values;
 
     const state: DashboardState = {
       sessionId,
@@ -30,6 +30,7 @@ export async function GET() {
       evaluator: evaluator as DashboardState["evaluator"],
       cost: cost as DashboardState["cost"],
       timeline: timeline as DashboardState["timeline"],
+      spec: spec as DashboardState["spec"],
     };
 
     console.log(`[status] Returning state for session=${sessionId}`);

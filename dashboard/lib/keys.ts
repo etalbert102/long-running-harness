@@ -1,4 +1,4 @@
-export const TYPES = ["status", "features", "sprint", "commits", "evaluator", "cost", "timeline"] as const;
+export const TYPES = ["status", "features", "sprint", "commits", "evaluator", "cost", "timeline", "spec"] as const;
 
 export type KeyType = (typeof TYPES)[number];
 

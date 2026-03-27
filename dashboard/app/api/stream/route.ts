@@ -45,7 +45,7 @@ export async function GET() {
           } else {
             const keys = getAllKeys(sessionId);
             const values = await redis.mget(...keys);
-            const [status, features, sprint, commits, evaluator, cost, timeline] = values;
+            const [status, features, sprint, commits, evaluator, cost, timeline, spec] = values;
 
             const data = JSON.stringify({
               sessionId,
@@ -56,6 +56,7 @@ export async function GET() {
               evaluator: evaluator ?? null,
               cost: cost ?? null,
               timeline: timeline ?? null,
+              spec: spec ?? null,
             });
 
             const hash = data;
