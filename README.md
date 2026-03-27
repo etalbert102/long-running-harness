@@ -10,8 +10,8 @@ An autonomous coding orchestrator that builds software end-to-end using a planne
 
 ```
 ┌─────────────────────────────────────────────────────────┐
-│                     HARNESS (Python)                     │
-│                                                          │
+│                     HARNESS (Python)                    │
+│                                                         │
 │  ┌──────────┐    ┌───────────┐    ┌───────────────────┐ │
 │  │ Planner  │───▶│ Generator │───▶│ Hard Validators   │ │
 │  │          │    │           │    │ (tsc, eslint,     │ │
@@ -33,19 +33,19 @@ An autonomous coding orchestrator that builds software end-to-end using a planne
 │                                    │  - Security   │    │
 │                                    │  - Usability  │    │
 │                                    └───────────────┘    │
-│                                                          │
+│                                                         │
 │  Pushes status via webhook ──────────────────────────▶  │
 └─────────────────────────────────────────────────────────┘
                                                     │
                                                     ▼
 ┌─────────────────────────────────────────────────────────┐
-│              DASHBOARD (Next.js on Vercel)                │
-│                                                          │
+│              DASHBOARD (Next.js on Vercel)              │
+│                                                         │
 │  ┌────────────────────────────────────────────────────┐ │
 │  │ Real-time monitoring: status, features, timeline,  │ │
 │  │ evaluator scores, cost tracking, commit feed       │ │
 │  │                                                    │ │
-│  │ Harness → POST /api/ingest → Redis → SSE → Browser│ │
+│  │ Harness → POST /api/ingest → Redis → SSE → Browser │ │
 │  └────────────────────────────────────────────────────┘ │
 └─────────────────────────────────────────────────────────┘
 ```
