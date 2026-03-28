@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from pathlib import Path
+from uuid import uuid4
 
 import pytest
 
@@ -43,3 +44,37 @@ def test_load_document_from_path_rejects_unsupported_extensions() -> None:
     draft_path = _ingestion_fixture_path("unsupported.rtf")
     with pytest.raises(ValueError, match="Unsupported draft file extension"):
         load_document_from_path(draft_path)
+
+
+def test_load_document_from_path_loads_docx_in_source_order() -> None:
+    """Ingestion should read `.docx` paragraphs in order and tolerate supported formatting."""
+    docx_module = pytest.importorskip("docx")
+    docx_document_class = docx_module.Document
+
+    temp_dir = Path.cwd() / ".tmp" / "tests"
+    temp_dir.mkdir(parents=True, exist_ok=True)
+    draft_path = temp_dir / f"sample-{uuid4().hex}.docx"
+    source_document = docx_document_class()
+
+    first_paragraph = source_document.add_paragraph()
+    first_paragraph.add_run("First")
+    first_paragraph.add_run(" paragraph.").bold = True
+
+    second_paragraph = source_document.add_paragraph()
+    second_paragraph.add_run("Second")
+    second_paragraph.add_run(" paragraph.").italic = True
+
+    source_document.add_paragraph("Third paragraph.")
+    source_document.save(str(draft_path))
+
+    try:
+        document = load_document_from_path(draft_path)
+    finally:
+        draft_path.unlink(missing_ok=True)
+
+    assert document.text == "First paragraph.\n\nSecond paragraph.\n\nThird paragraph."
+    assert [paragraph.text for paragraph in document.paragraphs] == [
+        "First paragraph.",
+        "Second paragraph.",
+        "Third paragraph.",
+    ]

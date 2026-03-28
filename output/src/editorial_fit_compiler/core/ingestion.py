@@ -7,7 +7,7 @@ from pathlib import Path
 
 from editorial_fit_compiler.core.models import Document, Paragraph
 
-SUPPORTED_DRAFT_EXTENSIONS: tuple[str, ...] = (".md", ".txt")
+SUPPORTED_DRAFT_EXTENSIONS: tuple[str, ...] = (".md", ".txt", ".docx")
 
 
 def normalize_draft_text(raw_text: str) -> str:
@@ -44,6 +44,19 @@ def _paragraphs_from_text(normalized_text: str) -> tuple[Paragraph, ...]:
     return tuple(paragraphs)
 
 
+def _extract_docx_text(draft_path: Path) -> str:
+    """Extract `.docx` paragraph text in source order as normalized draft text."""
+    from docx import Document as DocxDocument
+
+    docx_document = DocxDocument(str(draft_path))
+    paragraph_texts = [
+        paragraph.text
+        for paragraph in docx_document.paragraphs
+        if paragraph.text.strip()
+    ]
+    return normalize_draft_text("\n\n".join(paragraph_texts))
+
+
 def load_document_from_path(draft_path: Path) -> Document:
     """Load a supported draft file path into a normalized document model."""
     suffix = draft_path.suffix.lower()
@@ -54,8 +67,11 @@ def load_document_from_path(draft_path: Path) -> Document:
         msg = f"Draft file not found: {draft_path}"
         raise FileNotFoundError(msg)
 
-    raw_text = draft_path.read_text(encoding="utf-8")
-    normalized_text = normalize_draft_text(raw_text)
+    if suffix == ".docx":
+        normalized_text = _extract_docx_text(draft_path)
+    else:
+        raw_text = draft_path.read_text(encoding="utf-8")
+        normalized_text = normalize_draft_text(raw_text)
     if not normalized_text.strip():
         msg = f"Draft file is empty after normalization: {draft_path}"
         raise ValueError(msg)

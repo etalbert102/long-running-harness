@@ -59,7 +59,11 @@ def _run_with_argparse(argv: Sequence[str] | None = None) -> int:
     )
     subparsers = parser.add_subparsers(dest="command")
     analyze_parser = subparsers.add_parser("analyze", help="Analyze a supported draft file.")
-    analyze_parser.add_argument("draft_path", type=Path, help="Path to a .md or .txt draft.")
+    analyze_parser.add_argument(
+        "draft_path",
+        type=Path,
+        help="Path to a .md, .txt, or .docx draft.",
+    )
     args = parser.parse_args(argv)
     if args.version:
         print(f"efc {__version__}")

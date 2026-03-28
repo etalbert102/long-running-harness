@@ -115,7 +115,7 @@
         "When ingestion runs",
         "Then textual content is extracted in source order without crashing on supported formatting"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "F010",
