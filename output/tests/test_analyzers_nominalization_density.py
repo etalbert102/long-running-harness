@@ -53,6 +53,31 @@ def test_estimate_nominalization_density_supports_custom_suffix_and_lexicon() ->
     assert tuple(span.heuristic for span in metrics.evidence_spans) == ("suffix", "lexicon")
 
 
+def test_estimate_nominalization_density_allows_custom_suffix_exclusion_behavior() -> None:
+    """Suffix exclusions should be caller-configurable for custom heuristics."""
+    text = "Business and friendship improved."
+
+    default_metrics = estimate_nominalization_density(
+        text,
+        nominalization_suffixes=("ness", "ship"),
+        nominalization_lexicon=(),
+    )
+    without_exclusions_metrics = estimate_nominalization_density(
+        text,
+        nominalization_suffixes=("ness", "ship"),
+        nominalization_lexicon=(),
+        suffix_exclusion_lexicon=(),
+    )
+
+    assert default_metrics.nominalization_count == 1
+    assert tuple(span.nominalization for span in default_metrics.evidence_spans) == ("friendship",)
+    assert without_exclusions_metrics.nominalization_count == 2
+    assert tuple(span.nominalization for span in without_exclusions_metrics.evidence_spans) == (
+        "business",
+        "friendship",
+    )
+
+
 def test_estimate_nominalization_density_avoids_known_suffix_false_positives() -> None:
     """Suffix matching should not count known lexical false positives such as business."""
     text = "The business expanded after coordination."
@@ -89,6 +114,30 @@ def test_estimate_nominalization_density_tokenizes_unicode_and_punctuation_bound
         "lexicon",
         "lexicon",
         "suffix",
+    )
+
+
+def test_estimate_nominalization_density_handles_canonical_unicode_equivalence() -> None:
+    """Composed and decomposed accents should produce equivalent document-level metrics."""
+    composed_text = "Évidence supports coordination."
+    decomposed_text = "E\u0301vidence supports coordination."
+
+    composed_metrics = estimate_nominalization_density(composed_text)
+    decomposed_metrics = estimate_nominalization_density(decomposed_text)
+
+    assert composed_metrics.nominalization_count == 2
+    assert decomposed_metrics.nominalization_count == 2
+    assert composed_metrics.word_count == 3
+    assert decomposed_metrics.word_count == 3
+    assert composed_metrics.nominalization_density_score == pytest.approx(2 / 3)
+    assert decomposed_metrics.nominalization_density_score == pytest.approx(2 / 3)
+    assert tuple(span.nominalization for span in composed_metrics.evidence_spans) == (
+        "évidence",
+        "coordination",
+    )
+    assert tuple(span.nominalization for span in decomposed_metrics.evidence_spans) == (
+        "évidence",
+        "coordination",
     )
 
 
@@ -168,3 +217,42 @@ def test_estimate_nominalization_density_in_paragraphs_supports_mixed_case_match
         "analysis",
     )
     assert tuple(span.text for span in metrics.evidence_spans) == ("COORDINATION", "Analysis")
+
+
+def test_estimate_nominalization_density_in_paragraphs_handles_canonical_unicode_equivalence(
+) -> None:
+    """Paragraph-level metrics should remain stable for composed/decomposed accents."""
+    first_text = "Évidence supports coordination."
+    second_text = "E\u0301vidence supports coordination."
+    second_start = len(first_text) + 2
+    paragraphs = (
+        Paragraph(
+            paragraph_id="p1",
+            text=first_text,
+            start_char=0,
+            end_char=len(first_text),
+            sentences=(),
+        ),
+        Paragraph(
+            paragraph_id="p2",
+            text=second_text,
+            start_char=second_start,
+            end_char=second_start + len(second_text),
+            sentences=(),
+        ),
+    )
+
+    metrics = estimate_nominalization_density_in_paragraphs(paragraphs)
+
+    assert metrics.nominalization_count == 4
+    assert metrics.word_count == 6
+    assert metrics.nominalization_density_score == pytest.approx(4 / 6)
+    assert tuple(item.nominalization_count for item in metrics.paragraph_densities) == (2, 2)
+    assert tuple(item.word_count for item in metrics.paragraph_densities) == (3, 3)
+    assert tuple(span.paragraph_id for span in metrics.evidence_spans) == ("p1", "p1", "p2", "p2")
+    assert tuple(span.nominalization for span in metrics.evidence_spans) == (
+        "évidence",
+        "coordination",
+        "évidence",
+        "coordination",
+    )

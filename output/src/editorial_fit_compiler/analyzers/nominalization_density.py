@@ -37,6 +37,7 @@ _DEFAULT_SUFFIX_EXCLUSION_LEXICON: frozenset[str] = frozenset(
     }
 )
 _WORD_RE = re.compile(r"[^\W\d_]+(?:[-'][^\W\d_]+)*", re.UNICODE)
+_TOKEN_CONNECTORS: frozenset[str] = frozenset({"-", "'"})
 
 
 @dataclass(frozen=True, slots=True)
@@ -77,17 +78,23 @@ def estimate_nominalization_density(
     *,
     nominalization_suffixes: Sequence[str] | None = None,
     nominalization_lexicon: Sequence[str] | None = None,
+    suffix_exclusion_lexicon: Sequence[str] | None = None,
 ) -> NominalizationDensityMetrics:
-    """Estimate nominalization density in free text using suffix and lexicon heuristics."""
-    normalized_suffixes, normalized_lexicon = _normalize_heuristics(
+    """Estimate nominalization density in free text using suffix and lexicon heuristics.
+
+    Pass `suffix_exclusion_lexicon=()` to disable default suffix false-positive exclusions.
+    """
+    normalized_suffixes, normalized_lexicon, normalized_suffix_exclusions = _normalize_heuristics(
         nominalization_suffixes=nominalization_suffixes,
         nominalization_lexicon=nominalization_lexicon,
+        suffix_exclusion_lexicon=suffix_exclusion_lexicon,
     )
     evidence_spans = tuple(
         _build_evidence_for_text(
             text,
             nominalization_suffixes=normalized_suffixes,
             nominalization_lexicon=normalized_lexicon,
+            suffix_exclusion_lexicon=normalized_suffix_exclusions,
         )
     )
     word_count = _count_words(text)
@@ -105,11 +112,16 @@ def estimate_nominalization_density_in_paragraphs(
     *,
     nominalization_suffixes: Sequence[str] | None = None,
     nominalization_lexicon: Sequence[str] | None = None,
+    suffix_exclusion_lexicon: Sequence[str] | None = None,
 ) -> NominalizationDensityMetrics:
-    """Estimate paragraph and document nominalization density using segmented paragraphs."""
-    normalized_suffixes, normalized_lexicon = _normalize_heuristics(
+    """Estimate paragraph and document nominalization density using segmented paragraphs.
+
+    Pass `suffix_exclusion_lexicon=()` to disable default suffix false-positive exclusions.
+    """
+    normalized_suffixes, normalized_lexicon, normalized_suffix_exclusions = _normalize_heuristics(
         nominalization_suffixes=nominalization_suffixes,
         nominalization_lexicon=nominalization_lexicon,
+        suffix_exclusion_lexicon=suffix_exclusion_lexicon,
     )
     evidence_spans: list[NominalizationEvidence] = []
     paragraph_densities: list[ParagraphNominalizationDensity] = []
@@ -124,6 +136,7 @@ def estimate_nominalization_density_in_paragraphs(
             paragraph.text,
             nominalization_suffixes=normalized_suffixes,
             nominalization_lexicon=normalized_lexicon,
+            suffix_exclusion_lexicon=normalized_suffix_exclusions,
         )
         paragraph_densities.append(
             ParagraphNominalizationDensity(
@@ -163,7 +176,8 @@ def _normalize_heuristics(
     *,
     nominalization_suffixes: Sequence[str] | None,
     nominalization_lexicon: Sequence[str] | None,
-) -> tuple[tuple[str, ...], frozenset[str]]:
+    suffix_exclusion_lexicon: Sequence[str] | None,
+) -> tuple[tuple[str, ...], frozenset[str], frozenset[str]]:
     """Normalize suffix and lexicon inputs into stable lowercased matching sets."""
     suffixes = _normalize_entries(
         _DEFAULT_NOMINALIZATION_SUFFIXES
@@ -177,7 +191,14 @@ def _normalize_heuristics(
             else tuple(nominalization_lexicon),
         )
     )
-    return suffixes, lexicon
+    suffix_exclusions = frozenset(
+        _normalize_entries(
+            _DEFAULT_SUFFIX_EXCLUSION_LEXICON
+            if suffix_exclusion_lexicon is None
+            else tuple(suffix_exclusion_lexicon),
+        )
+    )
+    return suffixes, lexicon, suffix_exclusions
 
 
 def _normalize_entries(entries: Sequence[str]) -> tuple[str, ...]:
@@ -207,17 +228,18 @@ def _build_evidence_for_text(
     *,
     nominalization_suffixes: Sequence[str],
     nominalization_lexicon: frozenset[str],
+    suffix_exclusion_lexicon: frozenset[str],
 ) -> list[NominalizationEvidence]:
     """Return token-level nominalization evidence in source order for a text block."""
     evidence_spans: list[NominalizationEvidence] = []
-    for match in _WORD_RE.finditer(text):
-        token_text = match.group(0)
-        normalized_token = token_text.casefold()
+    for token_text, token_start, token_end in _iter_word_tokens(text):
+        normalized_token = unicodedata.normalize("NFC", token_text).casefold()
         normalized_token_for_matching = _normalize_for_matching(token_text)
         heuristic = _match_heuristic(
             token=normalized_token_for_matching,
             nominalization_suffixes=nominalization_suffixes,
             nominalization_lexicon=nominalization_lexicon,
+            suffix_exclusion_lexicon=suffix_exclusion_lexicon,
         )
         if heuristic is None:
             continue
@@ -225,8 +247,8 @@ def _build_evidence_for_text(
             NominalizationEvidence(
                 nominalization=normalized_token,
                 text=token_text,
-                start_char=match.start(),
-                end_char=match.end(),
+                start_char=token_start,
+                end_char=token_end,
                 heuristic=heuristic,
             )
         )
@@ -238,11 +260,12 @@ def _match_heuristic(
     token: str,
     nominalization_suffixes: Sequence[str],
     nominalization_lexicon: frozenset[str],
+    suffix_exclusion_lexicon: frozenset[str],
 ) -> Literal["suffix", "lexicon"] | None:
     """Return the heuristic that matched a token, or None if not nominalized."""
     if token in nominalization_lexicon:
         return "lexicon"
-    if token in _DEFAULT_SUFFIX_EXCLUSION_LEXICON:
+    if token in suffix_exclusion_lexicon:
         return None
 
     for suffix in nominalization_suffixes:
@@ -256,4 +279,42 @@ def _match_heuristic(
 
 def _count_words(text: str) -> int:
     """Count word-like tokens for density denominator normalization."""
-    return len(_WORD_RE.findall(text))
+    return sum(1 for _token in _iter_word_tokens(text))
+
+
+def _iter_word_tokens(text: str) -> Iterable[tuple[str, int, int]]:
+    """Yield `(token, start, end)` tuples with Unicode-aware letter/mark tokenization."""
+    index = 0
+    text_length = len(text)
+
+    while index < text_length:
+        if not _is_word_start_character(text[index]):
+            index += 1
+            continue
+
+        start = index
+        index += 1
+        while index < text_length and _is_word_continue_character(text[index]):
+            index += 1
+
+        while index < text_length and text[index] in _TOKEN_CONNECTORS:
+            connector_index = index
+            next_index = connector_index + 1
+            if next_index >= text_length or not _is_word_start_character(text[next_index]):
+                break
+            index = next_index + 1
+            while index < text_length and _is_word_continue_character(text[index]):
+                index += 1
+
+        yield text[start:index], start, index
+
+
+def _is_word_start_character(character: str) -> bool:
+    """Return whether a character can start a word token in analyzer tokenization."""
+    return unicodedata.category(character).startswith("L")
+
+
+def _is_word_continue_character(character: str) -> bool:
+    """Return whether a character can continue a token after a letter."""
+    category = unicodedata.category(character)
+    return category.startswith("L") or unicodedata.combining(character) > 0
