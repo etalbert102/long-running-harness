@@ -8,6 +8,8 @@ from pathlib import Path
 import pytest
 
 from editorial_fit_compiler.analyzers import (
+    compute_paragraph_length_distribution,
+    compute_paragraph_length_distribution_from_paragraphs,
     compute_sentence_length_distribution,
     compute_sentence_length_distribution_from_paragraphs,
     compute_structure_metrics,
@@ -121,3 +123,97 @@ def test_compute_sentence_length_distribution_from_paragraphs_uses_sentence_toke
     assert metrics.spread_tokens == 2
     assert metrics.cadence_uniformity_ratio == pytest.approx(1 / 3)
     assert metrics.cadence_narrow_band is False
+
+
+def test_compute_paragraph_length_distribution_flags_outlier_long_and_short_paragraphs() -> None:
+    """Paragraph distribution should flag unusually short and long token-count outliers."""
+    metrics = compute_paragraph_length_distribution((1, 40, 41, 42, 43, 44, 100))
+
+    assert metrics.paragraph_count == 7
+    assert metrics.average_tokens == pytest.approx(44.4285714)
+    assert metrics.variance_tokens == pytest.approx(716.2448979)
+    assert metrics.std_dev_tokens == pytest.approx(26.76275206)
+    assert metrics.min_tokens == 1
+    assert metrics.max_tokens == 100
+    assert metrics.spread_tokens == 99
+    assert metrics.q1_tokens == pytest.approx(40.5)
+    assert metrics.q3_tokens == pytest.approx(43.5)
+    assert metrics.iqr_tokens == pytest.approx(3.0)
+    assert metrics.lower_outlier_threshold == pytest.approx(36.0)
+    assert metrics.upper_outlier_threshold == pytest.approx(48.0)
+    assert metrics.short_outlier_indices == (0,)
+    assert metrics.long_outlier_indices == (6,)
+
+
+def test_compute_paragraph_length_distribution_handles_empty_input() -> None:
+    """Empty paragraph counts should produce zero-valued metrics and no outliers."""
+    metrics = compute_paragraph_length_distribution(())
+
+    assert metrics.paragraph_count == 0
+    assert metrics.average_tokens == pytest.approx(0.0)
+    assert metrics.variance_tokens == pytest.approx(0.0)
+    assert metrics.std_dev_tokens == pytest.approx(0.0)
+    assert metrics.min_tokens == 0
+    assert metrics.max_tokens == 0
+    assert metrics.spread_tokens == 0
+    assert metrics.q1_tokens == pytest.approx(0.0)
+    assert metrics.q3_tokens == pytest.approx(0.0)
+    assert metrics.iqr_tokens == pytest.approx(0.0)
+    assert metrics.short_outlier_indices == ()
+    assert metrics.long_outlier_indices == ()
+
+
+def test_compute_paragraph_length_distribution_rejects_negative_counts() -> None:
+    """Negative paragraph token counts are invalid and should raise an actionable error."""
+    with pytest.raises(ValueError, match="non-negative"):
+        compute_paragraph_length_distribution((4, -1, 9))
+
+
+def test_compute_paragraph_length_distribution_from_paragraphs_uses_paragraph_tokens() -> None:
+    """Paragraph text should be converted into paragraph-level token counts."""
+    paragraphs = (
+        Paragraph(
+            paragraph_id="p1",
+            text="one two three four",
+            start_char=0,
+            end_char=18,
+            sentences=(),
+        ),
+        Paragraph(
+            paragraph_id="p2",
+            text="alpha beta gamma delta epsilon zeta eta theta",
+            start_char=19,
+            end_char=63,
+            sentences=(),
+        ),
+        Paragraph(
+            paragraph_id="p3",
+            text="x",
+            start_char=64,
+            end_char=65,
+            sentences=(),
+        ),
+        Paragraph(
+            paragraph_id="p4",
+            text="lorem ipsum dolor sit amet consectetur adipiscing elit",
+            start_char=66,
+            end_char=120,
+            sentences=(),
+        ),
+        Paragraph(
+            paragraph_id="p5",
+            text="tiny",
+            start_char=121,
+            end_char=125,
+            sentences=(),
+        ),
+    )
+
+    metrics = compute_paragraph_length_distribution_from_paragraphs(paragraphs)
+
+    assert metrics.paragraph_count == 5
+    assert metrics.average_tokens == pytest.approx(4.4)
+    assert metrics.q1_tokens == pytest.approx(1.0)
+    assert metrics.q3_tokens == pytest.approx(8.0)
+    assert metrics.short_outlier_indices == ()
+    assert metrics.long_outlier_indices == ()

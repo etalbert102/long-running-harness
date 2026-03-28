@@ -284,7 +284,7 @@
         "When paragraph distribution analysis runs",
         "Then outlier-long and outlier-short paragraphs are flagged"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "F023",
