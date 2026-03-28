@@ -336,7 +336,7 @@
         "When hedge density analysis runs",
         "Then density score and matched hedge spans are produced"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "F027",

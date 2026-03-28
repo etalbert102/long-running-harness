@@ -12,6 +12,12 @@ from .citation_patterns import (
     detect_citation_like_patterns,
     detect_citation_like_patterns_in_paragraphs,
 )
+from .hedge_density import (
+    HedgeDensityMetrics,
+    HedgeEvidence,
+    estimate_hedge_density,
+    estimate_hedge_density_in_paragraphs,
+)
 from .punctuation_markers import (
     ForbiddenPunctuationEvidence,
     ForbiddenPunctuationMetrics,
@@ -38,6 +44,10 @@ __all__ = [
     "CitationPatternMetrics",
     "detect_citation_like_patterns",
     "detect_citation_like_patterns_in_paragraphs",
+    "HedgeDensityMetrics",
+    "HedgeEvidence",
+    "estimate_hedge_density",
+    "estimate_hedge_density_in_paragraphs",
     "ForbiddenPunctuationEvidence",
     "ForbiddenPunctuationMetrics",
     "detect_forbidden_punctuation",
