@@ -1,0 +1,19 @@
+venue_id: smr
+audience:
+  primary_reader: policy professionals
+  knowledge_level: advanced
+tone:
+  voice: analytical
+  formality: formal
+structure_norms:
+  opener_style: stakes-first
+  paragraph_length_preference: medium
+disfavored_markers:
+  markers:
+    - em_dash
+    - citation_clusters
+score_weights:
+  opening_fit: 0.35
+  abstraction_control: 0.2
+  rhythm: 0.2
+  concreteness: 0.25

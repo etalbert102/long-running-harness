@@ -206,7 +206,7 @@
         "When profile validation is run",
         "Then required profile attributes and weight fields are enforced"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "F017",

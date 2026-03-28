@@ -1,0 +1,59 @@
+"""Tests for venue profile schema validation and YAML loading."""
+
+from __future__ import annotations
+
+from pathlib import Path
+
+import pytest
+
+from editorial_fit_compiler.core.venue_profiles import VenueProfile, load_venue_profile
+from pydantic import ValidationError
+
+REQUIRED_TOP_LEVEL_FIELDS: tuple[str, ...] = (
+    "audience",
+    "tone",
+    "structure_norms",
+    "disfavored_markers",
+    "score_weights",
+)
+REQUIRED_WEIGHT_FIELDS: tuple[str, ...] = (
+    "opening_fit",
+    "abstraction_control",
+    "rhythm",
+    "concreteness",
+)
+
+
+def test_load_venue_profile_parses_valid_yaml() -> None:
+    """Loader should parse a valid venue profile into the typed schema."""
+    loaded = load_venue_profile(_fixture_path("valid_profile.yaml"))
+
+    assert isinstance(loaded, VenueProfile)
+    assert loaded.venue_id == "smr"
+    assert loaded.audience.primary_reader == "policy professionals"
+    assert loaded.tone.voice == "analytical"
+    assert loaded.structure_norms.opener_style == "stakes-first"
+    assert loaded.disfavored_markers.markers == ("em_dash", "citation_clusters")
+    assert loaded.score_weights.opening_fit == 0.35
+    assert loaded.score_weights.abstraction_control == 0.2
+    assert loaded.score_weights.rhythm == 0.2
+    assert loaded.score_weights.concreteness == 0.25
+
+
+@pytest.mark.parametrize("missing_field", REQUIRED_TOP_LEVEL_FIELDS)
+def test_load_venue_profile_requires_all_top_level_sections(missing_field: str) -> None:
+    """Validation should fail when any required top-level profile section is absent."""
+    with pytest.raises(ValidationError, match=missing_field):
+        load_venue_profile(_fixture_path(f"missing_{missing_field}_profile.yaml"))
+
+
+@pytest.mark.parametrize("missing_weight", REQUIRED_WEIGHT_FIELDS)
+def test_load_venue_profile_requires_all_score_weight_fields(missing_weight: str) -> None:
+    """Validation should fail when any required score weight field is absent."""
+    with pytest.raises(ValidationError, match=missing_weight):
+        load_venue_profile(_fixture_path(f"missing_weight_{missing_weight}_profile.yaml"))
+
+
+def _fixture_path(filename: str) -> Path:
+    """Resolve a venue profile fixture path used by venue schema tests."""
+    return Path(__file__).parent / "fixtures" / "venue_profiles" / filename
