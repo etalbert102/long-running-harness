@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import io
 from pathlib import Path
 
 from pytest import MonkeyPatch
@@ -69,4 +70,19 @@ def test_cli_analyze_loads_text_draft(capsys: object) -> None:
 
     assert exit_code == 0
     assert "Loaded draft" in captured.out
+    assert "2 paragraphs" in captured.out
+
+
+def test_argparse_analyze_reads_stdin_when_draft_path_is_omitted(
+    capsys: object,
+    monkeypatch: MonkeyPatch,
+) -> None:
+    """Analyze should read stdin text when draft_path is omitted."""
+    monkeypatch.setattr("sys.stdin", io.StringIO("First block.\n\nSecond block."))
+
+    exit_code = _run_with_argparse(["analyze"])
+    captured = capsys.readouterr()
+
+    assert exit_code == 0
+    assert "Loaded draft <stdin>" in captured.out
     assert "2 paragraphs" in captured.out

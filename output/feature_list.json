@@ -128,7 +128,7 @@
         "When analyze is invoked without a draft path",
         "Then the pipeline analyzes stdin content as a draft"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "F011",

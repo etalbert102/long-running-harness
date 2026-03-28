@@ -1,7 +1,12 @@
 """Core package for the Editorial Fit Compiler architecture."""
 
 from .config import ConfigConstraints, ConfigPreferences, UserConfig, load_user_config
-from .ingestion import SUPPORTED_DRAFT_EXTENSIONS, load_document_from_path, normalize_draft_text
+from .ingestion import (
+    SUPPORTED_DRAFT_EXTENSIONS,
+    load_document_from_path,
+    load_document_from_text,
+    normalize_draft_text,
+)
 from .models import (
     AnalysisReport,
     AnalysisSummary,
@@ -47,6 +52,7 @@ __all__ = [
     "ArtifactPaths",
     "UserConfig",
     "load_document_from_path",
+    "load_document_from_text",
     "load_user_config",
     "normalize_draft_text",
     "resolve_artifact_paths",

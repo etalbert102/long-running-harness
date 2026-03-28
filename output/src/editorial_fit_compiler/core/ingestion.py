@@ -1,4 +1,4 @@
-"""Draft ingestion helpers for supported file-based inputs."""
+"""Draft ingestion helpers for supported draft inputs."""
 
 from __future__ import annotations
 
@@ -100,6 +100,21 @@ def _extract_docx_text(draft_path: Path) -> str:
     return normalize_draft_text("\n\n".join(paragraph_texts))
 
 
+def load_document_from_text(raw_text: str, *, source_name: str = "<stdin>") -> Document:
+    """Load raw draft text into a normalized document model."""
+    normalized_text = normalize_draft_text(raw_text)
+    if not normalized_text.strip():
+        msg = f"Draft text is empty after normalization: {source_name}"
+        raise ValueError(msg)
+
+    return Document(
+        document_id=f"doc-{source_name.strip('<>') or 'input'}",
+        text=normalized_text,
+        source_path=source_name,
+        paragraphs=_paragraphs_from_text(normalized_text),
+    )
+
+
 def load_document_from_path(draft_path: Path) -> Document:
     """Load a supported draft file path into a normalized document model."""
     suffix = draft_path.suffix.lower()
@@ -114,14 +129,5 @@ def load_document_from_path(draft_path: Path) -> Document:
         normalized_text = _extract_docx_text(draft_path)
     else:
         raw_text = draft_path.read_text(encoding="utf-8")
-        normalized_text = normalize_draft_text(raw_text)
-    if not normalized_text.strip():
-        msg = f"Draft file is empty after normalization: {draft_path}"
-        raise ValueError(msg)
-
-    return Document(
-        document_id=f"doc-{draft_path.stem}",
-        text=normalized_text,
-        source_path=str(draft_path.resolve()),
-        paragraphs=_paragraphs_from_text(normalized_text),
-    )
+        normalized_text = raw_text
+    return load_document_from_text(normalized_text, source_name=str(draft_path.resolve()))

@@ -3,11 +3,13 @@
 from __future__ import annotations
 
 import argparse
+import sys
 from collections.abc import Sequence
 from pathlib import Path
 
 from editorial_fit_compiler import __version__
-from editorial_fit_compiler.core.ingestion import load_document_from_path
+from editorial_fit_compiler.core.ingestion import load_document_from_path, load_document_from_text
+from editorial_fit_compiler.core.models import Document
 
 try:
     import typer
@@ -15,6 +17,15 @@ except ModuleNotFoundError:  # pragma: no cover - exercised when typer is absent
     typer = None
 
 app = None
+
+
+def _load_analysis_document(draft_path: Path | None) -> Document:
+    """Load analysis input from a draft path or stdin when no path is provided."""
+    if draft_path is not None:
+        return load_document_from_path(draft_path)
+    return load_document_from_text(sys.stdin.read(), source_name="<stdin>")
+
+
 if typer is not None:
     app = typer.Typer(help="Editorial Fit Compiler command-line interface.")
 
@@ -36,9 +47,9 @@ if typer is not None:
             raise typer.Exit()
 
     @app.command()
-    def analyze(draft_path: Path) -> None:
-        """Load a supported draft file into the canonical document model."""
-        document = load_document_from_path(draft_path)
+    def analyze(draft_path: Path | None = None) -> None:
+        """Load a supported draft file or stdin text into the canonical document model."""
+        document = _load_analysis_document(draft_path)
         typer.echo(
             "Loaded draft "
             f"{document.source_path} ({len(document.text)} chars, "
@@ -62,13 +73,14 @@ def _run_with_argparse(argv: Sequence[str] | None = None) -> int:
     analyze_parser.add_argument(
         "draft_path",
         type=Path,
-        help="Path to a .md, .txt, or .docx draft.",
+        nargs="?",
+        help="Path to a .md, .txt, or .docx draft. Omit to read from stdin.",
     )
     args = parser.parse_args(argv)
     if args.version:
         print(f"efc {__version__}")
     elif args.command == "analyze":
-        document = load_document_from_path(args.draft_path)
+        document = _load_analysis_document(args.draft_path)
         print(
             "Loaded draft "
             f"{document.source_path} ({len(document.text)} chars, "

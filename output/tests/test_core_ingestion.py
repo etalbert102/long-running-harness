@@ -13,6 +13,7 @@ import pytest
 
 from editorial_fit_compiler.core.ingestion import (
     load_document_from_path,
+    load_document_from_text,
     normalize_draft_text,
 )
 
@@ -148,6 +149,17 @@ def test_load_document_from_path_loads_markdown_and_creates_paragraphs() -> None
     assert document.paragraphs[1].text == "Second paragraph."
     assert document.paragraphs[0].start_char == 0
     assert document.paragraphs[0].end_char == len("First paragraph.")
+
+
+def test_load_document_from_text_builds_document_for_stdin_input() -> None:
+    """Ingestion should normalize raw text input and map deterministic paragraph spans."""
+    document = load_document_from_text("Intro line.\r\n\r\nNext block.  ")
+
+    assert document.source_path == "<stdin>"
+    assert document.text == "Intro line.\n\nNext block."
+    assert len(document.paragraphs) == 2
+    assert document.paragraphs[0].text == "Intro line."
+    assert document.paragraphs[1].text == "Next block."
 
 
 def test_load_document_from_path_rejects_unsupported_extensions() -> None:
