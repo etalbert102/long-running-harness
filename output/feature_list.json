@@ -24,7 +24,7 @@
         "When quality tools are run with default configs",
         "Then lint, type-check, and test commands execute without configuration errors"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "F003",
@@ -37,7 +37,7 @@
         "When package directories are generated",
         "Then all architecture modules can be imported by tests"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "F004",
