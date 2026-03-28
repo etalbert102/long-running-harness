@@ -89,7 +89,7 @@
         "When report and artifact paths are resolved",
         "Then outputs are written to dedicated artifact locations and source files remain unchanged"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "F008",

@@ -20,6 +20,7 @@ from .models import (
     SeverityLevel,
     SeverityMetadata,
 )
+from .paths import ArtifactPaths, resolve_artifact_paths, write_text_artifact
 
 __all__ = [
     "AnalysisReport",
@@ -41,6 +42,9 @@ __all__ = [
     "Sentence",
     "SeverityLevel",
     "SeverityMetadata",
+    "ArtifactPaths",
     "UserConfig",
     "load_user_config",
+    "resolve_artifact_paths",
+    "write_text_artifact",
 ]
