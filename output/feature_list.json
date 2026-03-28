@@ -297,7 +297,7 @@
         "When punctuation detection runs",
         "Then em-dash counts and evidence spans are reported"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "F024",

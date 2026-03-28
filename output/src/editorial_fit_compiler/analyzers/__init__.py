@@ -1,5 +1,11 @@
 """Analyzer package for the Editorial Fit Compiler architecture."""
 
+from .punctuation_markers import (
+    ForbiddenPunctuationEvidence,
+    ForbiddenPunctuationMetrics,
+    detect_forbidden_punctuation,
+    detect_forbidden_punctuation_in_paragraphs,
+)
 from .structure_metrics import (
     ParagraphLengthDistributionMetrics,
     SentenceLengthDistributionMetrics,
@@ -12,6 +18,10 @@ from .structure_metrics import (
 )
 
 __all__ = [
+    "ForbiddenPunctuationEvidence",
+    "ForbiddenPunctuationMetrics",
+    "detect_forbidden_punctuation",
+    "detect_forbidden_punctuation_in_paragraphs",
     "ParagraphLengthDistributionMetrics",
     "SentenceLengthDistributionMetrics",
     "StructureMetrics",
