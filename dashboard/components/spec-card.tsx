@@ -13,7 +13,7 @@ export function SpecCard({ data }: { data: SpecData | null }) {
         {data.name}
       </h2>
       {data.description && (
-        <ScrollArea className="max-h-36 mt-2">
+        <ScrollArea className="h-20 mt-2 overflow-y-auto">
           <ReactMarkdown
             components={{
               p: ({ children }) => <p className="text-sm text-[#9399b2] leading-relaxed my-1">{children}</p>,

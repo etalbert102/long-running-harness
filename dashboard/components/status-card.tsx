@@ -90,7 +90,7 @@ export function StatusCard({ data }: { data: SessionStatus | null }) {
         {data.currentFeature && (
           <div className="mt-2 pt-2 border-t border-border/30">
             <span className="text-[10px] uppercase tracking-widest text-muted-foreground/60 mr-2">Feature</span>
-            <span className="text-sm text-foreground/80 truncate">{data.currentFeature}</span>
+            <span className="text-sm text-foreground/80 line-clamp-1">{data.currentFeature}</span>
           </div>
         )}
       </CardContent>
