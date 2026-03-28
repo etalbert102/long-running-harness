@@ -362,7 +362,7 @@
         "When abstraction phrase analysis runs",
         "Then matched phrases and density metrics are returned"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "F029",

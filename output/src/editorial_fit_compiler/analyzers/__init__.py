@@ -1,5 +1,11 @@
 """Analyzer package for the Editorial Fit Compiler architecture."""
 
+from .abstraction_phrase_density import (
+    AbstractionPhraseEvidence,
+    AbstractionPhraseMetrics,
+    count_abstraction_phrases,
+    count_abstraction_phrases_in_paragraphs,
+)
 from .bullet_usage import (
     BulletUsageEvidence,
     BulletUsageMetrics,
@@ -43,6 +49,10 @@ from .structure_metrics import (
 )
 
 __all__ = [
+    "AbstractionPhraseEvidence",
+    "AbstractionPhraseMetrics",
+    "count_abstraction_phrases",
+    "count_abstraction_phrases_in_paragraphs",
     "BulletUsageEvidence",
     "BulletUsageMetrics",
     "detect_bullet_usage",
