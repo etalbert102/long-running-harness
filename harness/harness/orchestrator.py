@@ -10,7 +10,7 @@ from pathlib import Path
 from harness.agents.planner import run_planner
 from harness.agents.generator import run_generator
 from harness.agents.evaluator import run_evaluator
-from harness.client import get_output_dir
+from harness.client import get_output_dir, get_project_type_override
 from harness.io_utils import read_text_file
 from harness.progress import read_progress, get_feature_summary, get_feature_list_path
 from harness.validators import run_all_validators, all_passed, format_failures
@@ -171,12 +171,18 @@ async def run_orchestrator(app_spec_path: Path) -> None:
             # Generator loop with validator retries
             evaluator_feedback = None
             feature_complete = False
+            project_type = get_project_type_override()
 
             for eval_attempt in range(max_eval_retries + 1):
                 # Run generator
                 await dashboard.push_phase_change(session.session_id, "generate", feature_name)
 
-                gen_result = await run_generator(feature, evaluator_feedback)
+                gen_result = await run_generator(
+                    feature,
+                    evaluator_feedback,
+                    retry_count=eval_attempt,
+                    project_type=project_type,
+                )
                 session.total_cost += gen_result.get("cost_usd", 0)
                 session.cost_by_agent["generator"] += gen_result.get("cost_usd", 0)
 
@@ -201,7 +207,12 @@ async def run_orchestrator(app_spec_path: Path) -> None:
                     if val_attempt < MAX_VALIDATOR_RETRIES - 1:
                         failures_text = format_failures(results)
                         evaluator_feedback = f"VALIDATOR FAILURES:\n{failures_text}"
-                        gen_result = await run_generator(feature, evaluator_feedback)
+                        gen_result = await run_generator(
+                            feature,
+                            evaluator_feedback,
+                            retry_count=eval_attempt + val_attempt + 1,
+                            project_type=project_type,
+                        )
                         session.total_cost += gen_result.get("cost_usd", 0)
                         session.cost_by_agent["generator"] += gen_result.get("cost_usd", 0)
 
@@ -225,7 +236,11 @@ async def run_orchestrator(app_spec_path: Path) -> None:
                 # Run evaluator for moderate/complex features
                 await dashboard.push_phase_change(session.session_id, "evaluate", feature_name)
 
-                eval_result = await run_evaluator(feature)
+                eval_result = await run_evaluator(
+                    feature,
+                    retry_count=eval_attempt,
+                    project_type=project_type,
+                )
                 session.total_cost += eval_result.get("cost_usd", 0)
                 session.cost_by_agent["evaluator"] += eval_result.get("cost_usd", 0)
 

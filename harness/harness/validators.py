@@ -59,13 +59,32 @@ NODE_HINTS = (
 )
 
 
-async def _run_cmd(name: str, cmd: list[str], cwd: Path) -> ValidationResult:
+def _build_env(cwd: Path, extra: dict[str, str] | None = None) -> dict[str, str]:
+    """Build a subprocess environment for validator commands."""
+    env = os.environ.copy()
+    src_dir = cwd / "src"
+    if src_dir.exists():
+        existing = env.get("PYTHONPATH", "")
+        env["PYTHONPATH"] = str(src_dir) if not existing else os.pathsep.join([str(src_dir), existing])
+    if extra:
+        env.update(extra)
+    return env
+
+
+async def _run_cmd(
+    name: str,
+    cmd: list[str],
+    cwd: Path,
+    *,
+    extra_env: dict[str, str] | None = None,
+) -> ValidationResult:
     """Run a shell command and capture output."""
     logger.info(f"[validators] Running {name}: {' '.join(cmd)}")
     try:
         proc = await asyncio.create_subprocess_exec(
             *cmd,
             cwd=str(cwd),
+            env=_build_env(cwd, extra_env),
             stdout=asyncio.subprocess.PIPE,
             stderr=asyncio.subprocess.STDOUT,
         )
@@ -145,7 +164,7 @@ def _pick_python_build(cwd: Path) -> list[str] | None:
 
 def _pick_python_test(cwd: Path) -> list[str]:
     if shutil.which("pytest"):
-        return ["pytest", "-q"]
+        return [sys.executable, "-m", "pytest", "-q", "tests"]
     return [sys.executable, "-m", "unittest", "discover"]
 
 

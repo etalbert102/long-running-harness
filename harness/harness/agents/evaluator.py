@@ -51,15 +51,22 @@ EVALUATION_SCHEMA = {
             "type": "array",
             "items": {
                 "type": "object",
-                "required": ["severity", "dimension", "description"],
-                "additionalProperties": True,
+                "required": [
+                    "severity",
+                    "dimension",
+                    "description",
+                    "file",
+                    "line",
+                    "suggestion",
+                ],
+                "additionalProperties": False,
                 "properties": {
                     "severity": {"type": "string"},
                     "dimension": {"type": "string"},
                     "description": {"type": "string"},
-                    "file": {"type": "string"},
-                    "line": {"type": "number"},
-                    "suggestion": {"type": "string"},
+                    "file": {"type": ["string", "null"]},
+                    "line": {"type": ["number", "null"]},
+                    "suggestion": {"type": ["string", "null"]},
                 },
             },
         },
@@ -87,13 +94,22 @@ def _compute_weighted_score(dimension_scores: dict[str, float]) -> float:
     return round(total, 2)
 
 
-async def run_evaluator(feature: dict) -> dict:
+async def run_evaluator(
+    feature: dict,
+    *,
+    retry_count: int = 0,
+    project_type: str | None = None,
+) -> dict:
     """Run the evaluator agent to review a feature implementation."""
     feature_id = feature.get("id", "unknown")
     description = feature.get("description", "no description")
     steps = feature.get("steps", [])
+    complexity = feature.get("complexity", "moderate")
 
-    logger.info(f"[evaluator] Evaluating feature {feature_id}: {description}")
+    logger.info(
+        f"[evaluator] Evaluating feature {feature_id}: {description} "
+        f"(complexity={complexity}, retry_count={retry_count})"
+    )
 
     system_prompt = read_text_file(PROMPT_PATH)
     steps_text = "\n".join(f"  - {step}" for step in steps) if steps else "  (no BDD steps defined)"
@@ -113,6 +129,9 @@ async def run_evaluator(feature: dict) -> dict:
         prompt=prompt,
         cwd=get_output_dir(),
         output_schema=EVALUATION_SCHEMA,
+        complexity=complexity,
+        retry_count=retry_count,
+        project_type=project_type,
     )
 
     if result.error:

@@ -2,15 +2,24 @@
 
 from __future__ import annotations
 
-import json
 import logging
 import os
+import shutil
 import subprocess
 import tempfile
 from dataclasses import dataclass
 from pathlib import Path
 
-from harness.client import get_model_for_role, get_output_dir, get_provider
+from harness.client import (
+    get_api_base_url,
+    get_api_headers,
+    get_api_key,
+    get_output_dir,
+    get_provider,
+)
+from harness.model_policy import select_model
+from harness.runtime import AgentRuntime, RuntimeConfig
+from harness.transports import OpenAICompatibleTransport, TransportError
 
 logger = logging.getLogger("harness.backend")
 
@@ -23,15 +32,6 @@ class AgentRunResult:
     error: str | None = None
 
 
-def _compose_prompt(role: str, system_prompt: str, prompt: str) -> str:
-    return (
-        f"You are the harness {role} agent.\n\n"
-        f"Follow the system instructions exactly.\n\n"
-        f"<SYSTEM_PROMPT>\n{system_prompt}\n</SYSTEM_PROMPT>\n\n"
-        f"<USER_PROMPT>\n{prompt}\n</USER_PROMPT>\n"
-    )
-
-
 def run_agent(
     *,
     role: str,
@@ -40,24 +40,77 @@ def run_agent(
     model_override: str | None = None,
     output_schema: dict | None = None,
     cwd: Path | None = None,
+    complexity: str | None = None,
+    retry_count: int = 0,
+    project_type: str | None = None,
 ) -> AgentRunResult:
     """Execute a single agent run using the configured backend."""
     provider = get_provider()
-    if provider != "codex":
-        return AgentRunResult(
-            output_text="",
-            error=f"Unsupported HARNESS_PROVIDER '{provider}'. Supported: codex",
+    target_dir = cwd or get_output_dir()
+    selection = select_model(
+        role=role,
+        complexity=complexity,
+        retry_count=retry_count,
+        structured_output=output_schema is not None,
+        project_type=project_type,
+    )
+    model = model_override or selection.model
+    selection_reason = "explicit override" if model_override else selection.reason
+
+    if provider == "codex":
+        return _run_with_codex_cli(
+            role=role,
+            target_dir=target_dir,
+            model=model,
+            selection_reason=selection_reason,
+            system_prompt=system_prompt,
+            prompt=prompt,
+            output_schema=output_schema,
         )
 
-    target_dir = cwd or get_output_dir()
-    model = model_override or get_model_for_role(role)
+    if provider == "openai-compatible":
+        return _run_with_openai_compatible_api(
+            role=role,
+            target_dir=target_dir,
+            model=model,
+            selection_reason=selection_reason,
+            system_prompt=system_prompt,
+            prompt=prompt,
+            output_schema=output_schema,
+        )
+
+    return AgentRunResult(
+        output_text="",
+        error=(
+            f"Unsupported HARNESS_PROVIDER '{provider}'. "
+            "Supported: codex, openai-compatible"
+        ),
+    )
+
+
+def _run_with_codex_cli(
+    *,
+    role: str,
+    target_dir: Path,
+    model: str,
+    selection_reason: str,
+    system_prompt: str,
+    prompt: str,
+    output_schema: dict | None,
+) -> AgentRunResult:
     full_prompt = _compose_prompt(role, system_prompt, prompt)
 
     with tempfile.TemporaryDirectory(prefix="harness-codex-") as temp_dir_str:
         temp_dir = Path(temp_dir_str)
         output_file = temp_dir / "last-message.txt"
+        try:
+            codex_executable = _resolve_codex_executable()
+        except FileNotFoundError as exc:
+            logger.error("[backend] %s failed to start: %s", role, exc)
+            return AgentRunResult(output_text="", error=str(exc))
+
         command = [
-            "codex",
+            codex_executable,
             "exec",
             "--skip-git-repo-check",
             "--full-auto",
@@ -74,14 +127,15 @@ def run_agent(
 
         if output_schema is not None:
             schema_file = temp_dir / "output-schema.json"
-            schema_file.write_text(json.dumps(output_schema, indent=2), encoding="utf-8")
+            schema_file.write_text(_json_dumps(output_schema), encoding="utf-8")
             command.extend(["--output-schema", str(schema_file)])
 
         logger.info(
-            "[backend] Running %s via codex in %s with model %s",
+            "[backend] Running %s via codex in %s with model %s (%s)",
             role,
             target_dir,
             model,
+            selection_reason,
         )
 
         try:
@@ -109,3 +163,89 @@ def run_agent(
             return AgentRunResult(output_text=output_text, error=error)
 
         return AgentRunResult(output_text=output_text)
+
+
+def _run_with_openai_compatible_api(
+    *,
+    role: str,
+    target_dir: Path,
+    model: str,
+    selection_reason: str,
+    system_prompt: str,
+    prompt: str,
+    output_schema: dict | None,
+) -> AgentRunResult:
+    base_url = get_api_base_url()
+    if not base_url:
+        return AgentRunResult(
+            output_text="",
+            error=(
+                "HARNESS_API_BASE_URL is required for provider 'openai-compatible'."
+            ),
+        )
+
+    logger.info(
+        "[backend] Running %s via openai-compatible API in %s with model %s (%s)",
+        role,
+        target_dir,
+        model,
+        selection_reason,
+    )
+
+    transport = OpenAICompatibleTransport(
+        base_url=base_url,
+        api_key=get_api_key() or None,
+        headers=get_api_headers(),
+    )
+    runtime = AgentRuntime(
+        transport=transport,
+        workspace_root=target_dir,
+        config=RuntimeConfig(),
+    )
+
+    try:
+        response = runtime.run(
+            model=model,
+            role=role,
+            system_prompt=system_prompt,
+            prompt=prompt,
+            output_schema=output_schema,
+        )
+    except TransportError as exc:
+        logger.error("[backend] %s failed: %s", role, exc)
+        return AgentRunResult(output_text="", error=str(exc))
+    except Exception as exc:  # pragma: no cover - defensive path
+        logger.error("[backend] %s failed to start: %s", role, exc)
+        return AgentRunResult(output_text="", error=str(exc))
+
+    return AgentRunResult(output_text=response.content)
+
+
+def _compose_prompt(role: str, system_prompt: str, prompt: str) -> str:
+    return (
+        f"You are the harness {role} agent.\n\n"
+        f"Follow the system instructions exactly.\n\n"
+        f"<SYSTEM_PROMPT>\n{system_prompt}\n</SYSTEM_PROMPT>\n\n"
+        f"<USER_PROMPT>\n{prompt}\n</USER_PROMPT>\n"
+    )
+
+
+def _resolve_codex_executable() -> str:
+    """Resolve the Codex CLI executable reliably on Windows."""
+    configured = os.environ.get("CODEX_EXECUTABLE", "").strip()
+    if configured:
+        return configured
+
+    resolved = shutil.which("codex")
+    if resolved:
+        return resolved
+
+    raise FileNotFoundError(
+        "Could not find 'codex' on PATH. Set CODEX_EXECUTABLE or add Codex CLI to PATH."
+    )
+
+
+def _json_dumps(data: dict) -> str:
+    import json
+
+    return json.dumps(data, indent=2)

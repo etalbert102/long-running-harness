@@ -245,7 +245,7 @@
         "When `efc profile show` is run",
         "Then a human-readable venue profile summary is printed"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "F020",

@@ -13,13 +13,23 @@ logger = logging.getLogger("harness.generator")
 PROMPT_PATH = Path(__file__).resolve().parent.parent / "prompts" / "generator.md"
 
 
-async def run_generator(feature: dict, evaluator_feedback: str | None = None) -> dict:
+async def run_generator(
+    feature: dict,
+    evaluator_feedback: str | None = None,
+    *,
+    retry_count: int = 0,
+    project_type: str | None = None,
+) -> dict:
     """Run the generator agent to implement a single feature."""
     feature_id = feature.get("id", "unknown")
     description = feature.get("description", "no description")
     steps = feature.get("steps", [])
+    complexity = feature.get("complexity", "moderate")
 
-    logger.info(f"[generator] Starting feature {feature_id}: {description}")
+    logger.info(
+        f"[generator] Starting feature {feature_id}: {description} "
+        f"(complexity={complexity}, retry_count={retry_count})"
+    )
 
     system_prompt = read_text_file(PROMPT_PATH)
     progress = read_progress()
@@ -51,6 +61,9 @@ async def run_generator(feature: dict, evaluator_feedback: str | None = None) ->
         system_prompt=system_prompt,
         prompt=prompt,
         cwd=get_output_dir(),
+        complexity=complexity,
+        retry_count=retry_count,
+        project_type=project_type,
     )
 
     if result.error:

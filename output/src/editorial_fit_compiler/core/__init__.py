@@ -28,10 +28,20 @@ from .models import (
 )
 from .paths import ArtifactPaths, resolve_artifact_paths, write_text_artifact
 from .segmentation import (
+    DefaultSentenceSegmentationProvider,
     SentenceSegment,
     SentenceSegmentationProvider,
     segment_normalized_paragraphs,
     segment_sentences,
+)
+from .venue_profiles import (
+    DisfavoredMarkers,
+    ScoreWeights,
+    StructureNorms,
+    VenueAudience,
+    VenueProfile,
+    VenueTone,
+    load_venue_profile,
 )
 
 __all__ = [
@@ -55,6 +65,7 @@ __all__ = [
     "Sentence",
     "SeverityLevel",
     "SeverityMetadata",
+    "DefaultSentenceSegmentationProvider",
     "SentenceSegment",
     "SentenceSegmentationProvider",
     "segment_normalized_paragraphs",
@@ -64,6 +75,13 @@ __all__ = [
     "load_document_from_path",
     "load_document_from_text",
     "load_user_config",
+    "VenueAudience",
+    "VenueTone",
+    "StructureNorms",
+    "DisfavoredMarkers",
+    "ScoreWeights",
+    "VenueProfile",
+    "load_venue_profile",
     "normalize_draft_text",
     "resolve_artifact_paths",
     "write_text_artifact",

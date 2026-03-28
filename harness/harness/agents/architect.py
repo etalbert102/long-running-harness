@@ -33,6 +33,7 @@ async def run_architect(app_spec_path: Path) -> dict | None:
         system_prompt=system_prompt,
         prompt=prompt,
         cwd=output_dir,
+        complexity="complex",
     )
     if result.error:
         logger.error(f"[architect] Session failed: {result.error}")

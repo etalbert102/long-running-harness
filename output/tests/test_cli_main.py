@@ -86,3 +86,24 @@ def test_argparse_analyze_reads_stdin_when_draft_path_is_omitted(
     assert exit_code == 0
     assert "Loaded draft <stdin>" in captured.out
     assert "2 paragraphs" in captured.out
+
+
+def test_cli_profile_show_prints_human_readable_summary(capsys: object) -> None:
+    """The profile show command should print a readable built-in venue summary."""
+    exit_code = main(["profile", "show", "smr"])
+    captured = capsys.readouterr()
+
+    assert exit_code == 0
+    assert "Venue profile: smr" in captured.out
+    assert "Audience:" in captured.out
+    assert "Score weights:" in captured.out
+
+
+def test_argparse_profile_show_prints_human_readable_summary(capsys: object) -> None:
+    """Argparse fallback should support profile show output for known venue IDs."""
+    exit_code = _run_with_argparse(["profile", "show", "smr"])
+    captured = capsys.readouterr()
+
+    assert exit_code == 0
+    assert "Venue profile: smr" in captured.out
+    assert "Disfavored markers:" in captured.out

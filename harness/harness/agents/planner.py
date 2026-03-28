@@ -32,6 +32,7 @@ async def run_planner(app_spec_path: Path) -> bool:
         system_prompt=system_prompt,
         prompt=prompt,
         cwd=output_dir,
+        complexity="complex",
     )
     if result.error:
         logger.error(f"[planner] Session failed: {result.error}")
