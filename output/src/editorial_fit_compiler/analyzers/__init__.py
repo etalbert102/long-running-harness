@@ -1,5 +1,11 @@
 """Analyzer package for the Editorial Fit Compiler architecture."""
 
+from .citation_patterns import (
+    CitationEvidence,
+    CitationPatternMetrics,
+    detect_citation_like_patterns,
+    detect_citation_like_patterns_in_paragraphs,
+)
 from .punctuation_markers import (
     ForbiddenPunctuationEvidence,
     ForbiddenPunctuationMetrics,
@@ -18,6 +24,10 @@ from .structure_metrics import (
 )
 
 __all__ = [
+    "CitationEvidence",
+    "CitationPatternMetrics",
+    "detect_citation_like_patterns",
+    "detect_citation_like_patterns_in_paragraphs",
     "ForbiddenPunctuationEvidence",
     "ForbiddenPunctuationMetrics",
     "detect_forbidden_punctuation",

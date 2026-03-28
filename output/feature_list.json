@@ -310,7 +310,7 @@
         "When citation analysis runs",
         "Then likely citations are counted and locations are returned"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "F025",
