@@ -167,7 +167,7 @@
         "When sentence segmentation is requested",
         "Then a provider-neutral API returns sentence spans and text segments"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "F014",
