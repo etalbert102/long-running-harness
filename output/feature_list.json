@@ -76,7 +76,7 @@
         "When findings are materialized",
         "Then each issue includes severity metadata and optional evidence spans with heuristic labels"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "F007",
