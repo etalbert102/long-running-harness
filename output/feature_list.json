@@ -271,7 +271,7 @@
         "When sentence distribution analysis runs",
         "Then average, spread, and cadence-uniformity indicators are produced"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "F022",
