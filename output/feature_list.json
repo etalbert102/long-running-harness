@@ -323,7 +323,7 @@
         "When bullet analysis runs",
         "Then bullet counts and paragraph locations are returned"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "F026",

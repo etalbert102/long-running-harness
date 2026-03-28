@@ -1,5 +1,11 @@
 """Analyzer package for the Editorial Fit Compiler architecture."""
 
+from .bullet_usage import (
+    BulletUsageEvidence,
+    BulletUsageMetrics,
+    detect_bullet_usage,
+    detect_bullet_usage_in_paragraphs,
+)
 from .citation_patterns import (
     CitationEvidence,
     CitationPatternMetrics,
@@ -24,6 +30,10 @@ from .structure_metrics import (
 )
 
 __all__ = [
+    "BulletUsageEvidence",
+    "BulletUsageMetrics",
+    "detect_bullet_usage",
+    "detect_bullet_usage_in_paragraphs",
     "CitationEvidence",
     "CitationPatternMetrics",
     "detect_citation_like_patterns",
