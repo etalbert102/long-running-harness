@@ -13,7 +13,8 @@ from harness.agents.architect import (
     get_service_spec,
 )
 from harness.orchestrator import run_orchestrator
-from harness.client import OUTPUT_DIR
+from harness.client import get_output_dir
+from harness.io_utils import read_text_file
 from harness import dashboard
 
 logger = logging.getLogger("harness.multi")
@@ -54,7 +55,7 @@ async def run_multi_orchestrator(app_spec_path: Path) -> None:
         return
 
     # Multi-service — run harness instances per execution phase
-    app_spec = app_spec_path.read_text()
+    app_spec = read_text_file(app_spec_path)
     groups = get_parallel_groups(services)
     total_services = sum(len(g) for g in groups)
 
@@ -126,7 +127,7 @@ async def _run_service_harness(
     logger.info(f"[multi:{name}] Starting service harness")
 
     # Create service-specific output directory
-    service_output = OUTPUT_DIR / service.get("entrypoint", name)
+    service_output = get_output_dir() / service.get("entrypoint", name)
     service_output.mkdir(parents=True, exist_ok=True)
 
     # Write the focused spec for this service
@@ -166,7 +167,7 @@ async def _build_shared_contracts(services: dict, root_session: str) -> None:
     contracts = services.get("shared_contracts", [])
 
     for contract in contracts:
-        path = OUTPUT_DIR / contract.get("path", f"shared/{contract['name']}.ts")
+        path = get_output_dir() / contract.get("path", f"shared/{contract['name']}.ts")
         path.parent.mkdir(parents=True, exist_ok=True)
 
         # The contract file is a placeholder — the first service that needs it

@@ -27,6 +27,8 @@ export interface RunFlags {
   model?: string;
   /** Model override for the evaluator agent. */
   modelEvaluator?: string;
+  /** Explicit generated project type override. */
+  projectType?: string;
   /** Dashboard URL override. */
   dashboardUrl?: string;
   /** When true, run multiple features in parallel. */
@@ -48,6 +50,8 @@ export interface HarnessRunOptions {
   model: string;
   /** Model to use for the evaluator agent. */
   modelEvaluator: string;
+  /** Explicit generated project type override. */
+  projectType?: string;
   /** Dashboard URL. */
   dashboardUrl: string;
   /** Whether to run multiple features in parallel. */
@@ -91,6 +95,7 @@ export function buildHarnessOptions(
     specPath,
     model: flags.model ?? config.models.default,
     modelEvaluator: flags.modelEvaluator ?? config.models.evaluator,
+    projectType: flags.projectType,
     dashboardUrl: flags.dashboardUrl ?? config.dashboard.url,
     multi: flags.multi ?? false,
     single: flags.single ?? false,

@@ -4,9 +4,8 @@ import json
 from pathlib import Path
 from dataclasses import dataclass
 
-from harness.client import OUTPUT_DIR
-
-FEATURE_LIST_PATH = OUTPUT_DIR / "feature_list.json"
+from harness.client import get_output_dir
+from harness.io_utils import read_text_file
 
 
 @dataclass
@@ -33,10 +32,11 @@ class ProgressReport:
 
 def read_progress() -> ProgressReport | None:
     """Read the feature list and return a progress report."""
-    if not FEATURE_LIST_PATH.exists():
+    feature_list_path = get_output_dir() / "feature_list.json"
+    if not feature_list_path.exists():
         return None
 
-    data = json.loads(FEATURE_LIST_PATH.read_text())
+    data = json.loads(read_text_file(feature_list_path))
     features = data if isinstance(data, list) else data.get("features", [])
 
     passing = sum(1 for f in features if f.get("passes", False))
@@ -70,3 +70,8 @@ def get_feature_summary(report: ProgressReport) -> dict:
             for f in report.items
         ],
     }
+
+
+def get_feature_list_path() -> Path:
+    """Return the active feature_list.json path."""
+    return get_output_dir() / "feature_list.json"

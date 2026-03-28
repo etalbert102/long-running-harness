@@ -10,8 +10,9 @@ from pathlib import Path
 from harness.agents.planner import run_planner
 from harness.agents.generator import run_generator
 from harness.agents.evaluator import run_evaluator
-from harness.client import OUTPUT_DIR
-from harness.progress import read_progress, get_feature_summary, FEATURE_LIST_PATH
+from harness.client import get_output_dir
+from harness.io_utils import read_text_file
+from harness.progress import read_progress, get_feature_summary, get_feature_list_path
 from harness.validators import run_all_validators, all_passed, format_failures
 from harness import dashboard
 
@@ -28,7 +29,7 @@ async def push_git_commits(session_id: str) -> None:
     try:
         result = subprocess.run(
             ["git", "log", "--oneline", "--format=%H|%s|%aI", "-10"],
-            cwd=str(OUTPUT_DIR),
+            cwd=str(get_output_dir()),
             capture_output=True,
             text=True,
             timeout=5,
@@ -47,7 +48,7 @@ async def push_git_commits(session_id: str) -> None:
             # Count files changed in this commit
             diff_result = subprocess.run(
                 ["git", "diff", "--name-only", f"{sha}~1", sha],
-                cwd=str(OUTPUT_DIR),
+                cwd=str(get_output_dir()),
                 capture_output=True,
                 text=True,
                 timeout=5,
@@ -93,7 +94,7 @@ async def run_orchestrator(app_spec_path: Path) -> None:
 
     # Push spec card — extract name/description from the spec file
     try:
-        spec_text = app_spec_path.read_text()
+        spec_text = read_text_file(app_spec_path)
         # Extract first heading as name, first paragraph as description
         spec_lines = [l.strip() for l in spec_text.split("\n") if l.strip()]
         spec_name = spec_lines[0].lstrip("# ") if spec_lines else app_spec_path.stem
@@ -104,7 +105,7 @@ async def run_orchestrator(app_spec_path: Path) -> None:
 
     try:
         # Phase 1: Planning
-        if not FEATURE_LIST_PATH.exists():
+        if not get_feature_list_path().exists():
             logger.info("[orchestrator] No feature_list.json — running planner")
             await dashboard.push_phase_change(session.session_id, "plan")
 

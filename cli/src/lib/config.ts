@@ -24,10 +24,10 @@ import type {
 
 /** Default model identifiers used when no overrides are present in config. */
 const DEFAULT_MODELS: HarnessConfigModels = {
-  default: "claude-opus-4-5",
-  planner: "claude-opus-4-5",
-  generator: "claude-sonnet-4-5",
-  evaluator: "claude-haiku-3-5",
+  default: "gpt-5.3-codex",
+  planner: "gpt-5.4-mini",
+  generator: "gpt-5.3-codex",
+  evaluator: "gpt-5.4",
 };
 
 /** Default dashboard settings. */

@@ -1,0 +1,784 @@
+{
+  "features": [
+    {
+      "id": "F001",
+      "category": "project-setup",
+      "description": "Initialize Python project scaffold with pyproject, dependency groups, and CLI entrypoint",
+      "priority": 1,
+      "complexity": "setup",
+      "steps": [
+        "Given an empty repository",
+        "When the bootstrap setup is executed",
+        "Then a runnable Python package with an `efc` CLI entrypoint exists"
+      ],
+      "passes": true
+    },
+    {
+      "id": "F002",
+      "category": "project-setup",
+      "description": "Configure linting, type checking, and pytest defaults for reproducible local development",
+      "priority": 1,
+      "complexity": "setup",
+      "steps": [
+        "Given the initialized project",
+        "When quality tools are run with default configs",
+        "Then lint, type-check, and test commands execute without configuration errors"
+      ],
+      "passes": false
+    },
+    {
+      "id": "F003",
+      "category": "project-setup",
+      "description": "Create module layout matching the architecture for cli, core, analyzers, classifiers, reports, prompts, utils, and tests",
+      "priority": 1,
+      "complexity": "setup",
+      "steps": [
+        "Given the configured project",
+        "When package directories are generated",
+        "Then all architecture modules can be imported by tests"
+      ],
+      "passes": false
+    },
+    {
+      "id": "F004",
+      "category": "core-models",
+      "description": "Define pydantic domain models for documents, paragraphs, sentences, diagnostics, constraints, and reports",
+      "priority": 1,
+      "complexity": "moderate",
+      "steps": [
+        "Given raw analysis outputs",
+        "When data is parsed into domain models",
+        "Then invalid shapes are rejected and valid models serialize deterministically"
+      ],
+      "passes": false
+    },
+    {
+      "id": "F005",
+      "category": "core-models",
+      "description": "Define configuration models for input YAML including constraints and preferences",
+      "priority": 1,
+      "complexity": "simple",
+      "steps": [
+        "Given a valid user config file",
+        "When the config is loaded",
+        "Then required fields and defaults are represented in typed models"
+      ],
+      "passes": false
+    },
+    {
+      "id": "F006",
+      "category": "core-models",
+      "description": "Define analyzer result and evidence-span schemas with heuristic confidence labeling",
+      "priority": 1,
+      "complexity": "moderate",
+      "steps": [
+        "Given analyzer findings",
+        "When findings are materialized",
+        "Then each issue includes severity metadata and optional evidence spans with heuristic labels"
+      ],
+      "passes": false
+    },
+    {
+      "id": "F007",
+      "category": "core-pipeline",
+      "description": "Implement artifact/output path management that never overwrites original draft files",
+      "priority": 1,
+      "complexity": "simple",
+      "steps": [
+        "Given an input draft path",
+        "When report and artifact paths are resolved",
+        "Then outputs are written to dedicated artifact locations and source files remain unchanged"
+      ],
+      "passes": false
+    },
+    {
+      "id": "F008",
+      "category": "ingestion",
+      "description": "Implement file ingestion for .md and .txt drafts via CLI path input",
+      "priority": 1,
+      "complexity": "simple",
+      "steps": [
+        "Given a markdown or text file path",
+        "When analyze is invoked",
+        "Then the draft content is loaded and normalized into the document model"
+      ],
+      "passes": false
+    },
+    {
+      "id": "F009",
+      "category": "ingestion",
+      "description": "Implement .docx ingestion using python-docx with paragraph-preserving extraction",
+      "priority": 1,
+      "complexity": "moderate",
+      "steps": [
+        "Given a .docx draft file",
+        "When ingestion runs",
+        "Then textual content is extracted in source order without crashing on supported formatting"
+      ],
+      "passes": false
+    },
+    {
+      "id": "F010",
+      "category": "ingestion",
+      "description": "Support direct pasted text and stdin workflow when no draft path is provided",
+      "priority": 2,
+      "complexity": "simple",
+      "steps": [
+        "Given text piped through stdin",
+        "When analyze is invoked without a draft path",
+        "Then the pipeline analyzes stdin content as a draft"
+      ],
+      "passes": false
+    },
+    {
+      "id": "F011",
+      "category": "text-processing",
+      "description": "Normalize raw text while preserving semantic content and stable paragraph boundaries",
+      "priority": 1,
+      "complexity": "moderate",
+      "steps": [
+        "Given a draft with mixed whitespace and line endings",
+        "When normalization is applied",
+        "Then output text is canonicalized without changing token meaning"
+      ],
+      "passes": false
+    },
+    {
+      "id": "F012",
+      "category": "text-processing",
+      "description": "Segment normalized text into deterministic paragraph units with stable IDs",
+      "priority": 1,
+      "complexity": "simple",
+      "steps": [
+        "Given normalized draft text",
+        "When paragraph segmentation runs",
+        "Then paragraphs are indexed in source order with reproducible IDs"
+      ],
+      "passes": false
+    },
+    {
+      "id": "F013",
+      "category": "text-processing",
+      "description": "Abstract sentence segmentation behind a provider interface",
+      "priority": 1,
+      "complexity": "moderate",
+      "steps": [
+        "Given paragraph text",
+        "When sentence segmentation is requested",
+        "Then a provider-neutral API returns sentence spans and text segments"
+      ],
+      "passes": false
+    },
+    {
+      "id": "F014",
+      "category": "text-processing",
+      "description": "Implement default NLTK or spaCy sentence segmentation backend with deterministic fallback",
+      "priority": 2,
+      "complexity": "moderate",
+      "steps": [
+        "Given valid English prose",
+        "When the default sentence segmenter runs",
+        "Then sentence boundaries are produced consistently and fallback logic handles unavailable models"
+      ],
+      "passes": false
+    },
+    {
+      "id": "F015",
+      "category": "text-processing",
+      "description": "Provide token/span utility helpers for evidence extraction and paragraph-sentence mapping",
+      "priority": 2,
+      "complexity": "simple",
+      "steps": [
+        "Given sentence and paragraph offsets",
+        "When span utilities are invoked",
+        "Then exact evidence slices and index mappings are returned"
+      ],
+      "passes": false
+    },
+    {
+      "id": "F016",
+      "category": "venue-profiles",
+      "description": "Define venue profile schema for audience, tone, structure norms, disfavored markers, and score weights",
+      "priority": 1,
+      "complexity": "moderate",
+      "steps": [
+        "Given a venue profile YAML",
+        "When profile validation is run",
+        "Then required profile attributes and weight fields are enforced"
+      ],
+      "passes": false
+    },
+    {
+      "id": "F017",
+      "category": "venue-profiles",
+      "description": "Implement versioned venue profile loader from YAML or JSON with strict validation errors",
+      "priority": 1,
+      "complexity": "simple",
+      "steps": [
+        "Given a valid profile file and an invalid profile file",
+        "When loader is executed",
+        "Then valid files load and invalid files return actionable schema errors"
+      ],
+      "passes": false
+    },
+    {
+      "id": "F018",
+      "category": "venue-profiles",
+      "description": "Ship built-in v1 venue profiles for smr, boston_review, hdsr, lawfare_like, and general_policy_magazine",
+      "priority": 1,
+      "complexity": "moderate",
+      "steps": [
+        "Given a built-in venue key",
+        "When profile resolution is requested",
+        "Then the expected profile data is loaded from packaged resources"
+      ],
+      "passes": false
+    },
+    {
+      "id": "F019",
+      "category": "venue-profiles",
+      "description": "Expose profile inspection functionality for CLI profile show command",
+      "priority": 2,
+      "complexity": "simple",
+      "steps": [
+        "Given a known venue id",
+        "When `efc profile show` is run",
+        "Then a human-readable venue profile summary is printed"
+      ],
+      "passes": false
+    },
+    {
+      "id": "F020",
+      "category": "analyzers-structure",
+      "description": "Compute baseline structure metrics including word count, section count, and paragraph count",
+      "priority": 1,
+      "complexity": "simple",
+      "steps": [
+        "Given a segmented draft",
+        "When structure metrics run",
+        "Then word, section, and paragraph counts match fixture expectations"
+      ],
+      "passes": false
+    },
+    {
+      "id": "F021",
+      "category": "analyzers-structure",
+      "description": "Compute sentence length distribution metrics with variance and narrow-band cadence indicators",
+      "priority": 2,
+      "complexity": "moderate",
+      "steps": [
+        "Given sentence-level token counts",
+        "When sentence distribution analysis runs",
+        "Then average, spread, and cadence-uniformity indicators are produced"
+      ],
+      "passes": false
+    },
+    {
+      "id": "F022",
+      "category": "analyzers-structure",
+      "description": "Compute paragraph length distribution metrics and identify outlier paragraphs",
+      "priority": 2,
+      "complexity": "simple",
+      "steps": [
+        "Given paragraph token lengths",
+        "When paragraph distribution analysis runs",
+        "Then outlier-long and outlier-short paragraphs are flagged"
+      ],
+      "passes": false
+    },
+    {
+      "id": "F023",
+      "category": "analyzers-style",
+      "description": "Detect em-dash usage and related forbidden punctuation markers",
+      "priority": 1,
+      "complexity": "simple",
+      "steps": [
+        "Given text containing em dashes",
+        "When punctuation detection runs",
+        "Then em-dash counts and evidence spans are reported"
+      ],
+      "passes": false
+    },
+    {
+      "id": "F024",
+      "category": "analyzers-structure",
+      "description": "Detect citation-like patterns and return counts with evidence spans",
+      "priority": 1,
+      "complexity": "simple",
+      "steps": [
+        "Given text with citation patterns",
+        "When citation analysis runs",
+        "Then likely citations are counted and locations are returned"
+      ],
+      "passes": false
+    },
+    {
+      "id": "F025",
+      "category": "analyzers-structure",
+      "description": "Detect bullet usage and bullet-count statistics for structure constraints",
+      "priority": 1,
+      "complexity": "simple",
+      "steps": [
+        "Given markdown with list items",
+        "When bullet analysis runs",
+        "Then bullet counts and paragraph locations are returned"
+      ],
+      "passes": false
+    },
+    {
+      "id": "F026",
+      "category": "analyzers-style",
+      "description": "Estimate hedge density using a configurable hedge lexicon",
+      "priority": 2,
+      "complexity": "moderate",
+      "steps": [
+        "Given prose with hedge phrases",
+        "When hedge density analysis runs",
+        "Then density score and matched hedge spans are produced"
+      ],
+      "passes": false
+    },
+    {
+      "id": "F027",
+      "category": "analyzers-style",
+      "description": "Estimate nominalization density using suffix and lexicon heuristics",
+      "priority": 2,
+      "complexity": "moderate",
+      "steps": [
+        "Given text with nominalized constructions",
+        "When nominalization analysis runs",
+        "Then per-paragraph and document-level nominalization density is reported"
+      ],
+      "passes": false
+    },
+    {
+      "id": "F028",
+      "category": "analyzers-rhetoric",
+      "description": "Count abstraction-heavy phrase patterns with customizable phrase banks",
+      "priority": 2,
+      "complexity": "moderate",
+      "steps": [
+        "Given text with abstraction markers",
+        "When abstraction phrase analysis runs",
+        "Then matched phrases and density metrics are returned"
+      ],
+      "passes": false
+    },
+    {
+      "id": "F029",
+      "category": "analyzers-rhetoric",
+      "description": "Count discourse scaffolding phrase usage and repeated scaffold dependence",
+      "priority": 2,
+      "complexity": "simple",
+      "steps": [
+        "Given text with scaffolding phrases",
+        "When scaffolding analysis runs",
+        "Then phrase counts and repetition warnings are emitted"
+      ],
+      "passes": false
+    },
+    {
+      "id": "F030",
+      "category": "analyzers-rhetoric",
+      "description": "Detect repeated sentence opener patterns across nearby sentences",
+      "priority": 2,
+      "complexity": "moderate",
+      "steps": [
+        "Given sentences with recurring openers",
+        "When opener repetition analysis runs",
+        "Then repeated pattern clusters are identified with severity"
+      ],
+      "passes": false
+    },
+    {
+      "id": "F031",
+      "category": "analyzers-rhetoric",
+      "description": "Detect repeated rhetorical templates including contrast constructions",
+      "priority": 3,
+      "complexity": "moderate",
+      "steps": [
+        "Given text with recurring rhetorical templates",
+        "When template analysis runs",
+        "Then repeated template frequency is computed and flagged"
+      ],
+      "passes": false
+    },
+    {
+      "id": "F032",
+      "category": "analyzers-rhetoric",
+      "description": "Detect undefined key terms introduced in first N paragraphs without nearby definition",
+      "priority": 2,
+      "complexity": "complex",
+      "steps": [
+        "Given first-paragraph concept introductions",
+        "When key-term definition checks run",
+        "Then terms lacking local definitions are flagged with paragraph references"
+      ],
+      "passes": false
+    },
+    {
+      "id": "F033",
+      "category": "analyzers-rhetoric",
+      "description": "Estimate concrete actor noun density using institution and actor cues",
+      "priority": 2,
+      "complexity": "moderate",
+      "steps": [
+        "Given prose with and without institutional actors",
+        "When concrete actor analysis runs",
+        "Then actor-density scores distinguish concrete from abstract paragraphs"
+      ],
+      "passes": false
+    },
+    {
+      "id": "F034",
+      "category": "analyzers-rhetoric",
+      "description": "Measure example density and detect first-example position in the draft",
+      "priority": 2,
+      "complexity": "moderate",
+      "steps": [
+        "Given a draft containing delayed examples",
+        "When example analysis runs",
+        "Then first-example position and example density are reported"
+      ],
+      "passes": false
+    },
+    {
+      "id": "F035",
+      "category": "analyzers-style",
+      "description": "Detect acronym overload via uppercase acronym frequency and local definition checks",
+      "priority": 3,
+      "complexity": "moderate",
+      "steps": [
+        "Given acronym-heavy text",
+        "When acronym overload analysis runs",
+        "Then overload risk and undefined acronym instances are identified"
+      ],
+      "passes": false
+    },
+    {
+      "id": "F036",
+      "category": "analyzers-style",
+      "description": "Estimate passive voice prevalence using lightweight syntax heuristics",
+      "priority": 3,
+      "complexity": "moderate",
+      "steps": [
+        "Given active and passive sentence fixtures",
+        "When passive voice analysis runs",
+        "Then passive-prevalence estimates align with expected direction"
+      ],
+      "passes": false
+    },
+    {
+      "id": "F037",
+      "category": "analyzers-rhetoric",
+      "description": "Estimate first-paragraph throat-clearing based on pressure, stakes, and actor absence",
+      "priority": 2,
+      "complexity": "moderate",
+      "steps": [
+        "Given introductory paragraphs with delayed stakes",
+        "When throat-clearing analysis runs",
+        "Then likely throat-clearing paragraphs are flagged with rationale"
+      ],
+      "passes": false
+    },
+    {
+      "id": "F038",
+      "category": "analysis-pipeline",
+      "description": "Compose deterministic analyzers into a single diagnostics pipeline with stable ordering",
+      "priority": 1,
+      "complexity": "moderate",
+      "steps": [
+        "Given a draft and venue profile",
+        "When diagnostics pipeline executes",
+        "Then all enabled analyzers run once and return a combined report"
+      ],
+      "passes": false
+    },
+    {
+      "id": "F039",
+      "category": "analysis-pipeline",
+      "description": "Attach evidence spans and explicit heuristic labels to each flagged issue where possible",
+      "priority": 1,
+      "complexity": "moderate",
+      "steps": [
+        "Given analyzer issue outputs",
+        "When issue normalization runs",
+        "Then each issue contains supporting span evidence or an explicit no-evidence reason"
+      ],
+      "passes": false
+    },
+    {
+      "id": "F040",
+      "category": "classifiers",
+      "description": "Implement rule-based paragraph role classifier for opener, framing, mechanism, example, and related roles",
+      "priority": 2,
+      "complexity": "complex",
+      "steps": [
+        "Given a multi-paragraph essay fixture",
+        "When paragraph role classification runs",
+        "Then each paragraph receives one supported role label with confidence metadata"
+      ],
+      "passes": false
+    },
+    {
+      "id": "F041",
+      "category": "classifiers",
+      "description": "Add optional LLM paragraph-role classifier interface behind feature flag without default network dependency",
+      "priority": 3,
+      "complexity": "moderate",
+      "steps": [
+        "Given LLM mode disabled",
+        "When classification is requested",
+        "Then rule-based classifier is used and no external call is made"
+      ],
+      "passes": false
+    },
+    {
+      "id": "F042",
+      "category": "scoring",
+      "description": "Compute category-level venue-fit signals for opening fit, abstraction control, rhythm, and concreteness",
+      "priority": 2,
+      "complexity": "moderate",
+      "steps": [
+        "Given analyzer outputs and profile targets",
+        "When category scoring runs",
+        "Then normalized category scores are produced for all configured dimensions"
+      ],
+      "passes": false
+    },
+    {
+      "id": "F043",
+      "category": "scoring",
+      "description": "Compute weighted overall venue-fit score from profile-defined weights with bounds 0-100",
+      "priority": 2,
+      "complexity": "simple",
+      "steps": [
+        "Given category scores and valid weights",
+        "When overall score is calculated",
+        "Then weighted result is bounded to 0-100 and reproducible"
+      ],
+      "passes": false
+    },
+    {
+      "id": "F044",
+      "category": "scoring",
+      "description": "Rank severity-weighted top violations and map each to actionable issue codes",
+      "priority": 2,
+      "complexity": "moderate",
+      "steps": [
+        "Given a set of scored issues",
+        "When ranking runs",
+        "Then top violations are ordered by severity and impact with deterministic tie-breaking"
+      ],
+      "passes": false
+    },
+    {
+      "id": "F045",
+      "category": "compliance",
+      "description": "Parse and validate explicit constraint rules from config including preserve, forbid, and tolerance limits",
+      "priority": 1,
+      "complexity": "simple",
+      "steps": [
+        "Given a constraints config",
+        "When constraint parsing runs",
+        "Then all supported rule types are validated and available to compliance checks"
+      ],
+      "passes": false
+    },
+    {
+      "id": "F046",
+      "category": "compliance",
+      "description": "Check forbidden patterns and structure invariants including no new sections, citations, or bullets when configured",
+      "priority": 1,
+      "complexity": "moderate",
+      "steps": [
+        "Given original and revised drafts with constraints",
+        "When structural compliance runs",
+        "Then forbidden additions are detected and reported as pass or fail"
+      ],
+      "passes": false
+    },
+    {
+      "id": "F047",
+      "category": "compliance",
+      "description": "Verify preserved concepts remain present in revised text using exact and fuzzy matching",
+      "priority": 1,
+      "complexity": "moderate",
+      "steps": [
+        "Given required concepts and revised text",
+        "When concept preservation checks run",
+        "Then missing concepts are flagged with confidence and evidence"
+      ],
+      "passes": false
+    },
+    {
+      "id": "F048",
+      "category": "compliance",
+      "description": "Enforce max new sentence count and word-count tolerance relative to original draft",
+      "priority": 1,
+      "complexity": "moderate",
+      "steps": [
+        "Given original and revised drafts with numeric limits",
+        "When quantitative compliance checks run",
+        "Then sentence-growth and word-range pass/fail outcomes are returned"
+      ],
+      "passes": false
+    },
+    {
+      "id": "F049",
+      "category": "compliance",
+      "description": "Detect collapsed required distinctions using phrase-similarity and contrast-pattern heuristics",
+      "priority": 2,
+      "complexity": "complex",
+      "steps": [
+        "Given required conceptual distinctions",
+        "When distinction-collapse checks run",
+        "Then suspicious merges of distinct concepts are flagged for review"
+      ],
+      "passes": false
+    },
+    {
+      "id": "F050",
+      "category": "edit-plan",
+      "description": "Generate top global issues list with severity levels and rationale",
+      "priority": 2,
+      "complexity": "simple",
+      "steps": [
+        "Given diagnostics and scoring outputs",
+        "When edit-plan generation starts",
+        "Then the top global issues list includes issue codes severity and short rationale"
+      ],
+      "passes": false
+    },
+    {
+      "id": "F051",
+      "category": "edit-plan",
+      "description": "Generate paragraph-by-paragraph action instructions including problems and concrete edits",
+      "priority": 2,
+      "complexity": "moderate",
+      "steps": [
+        "Given paragraph diagnostics and role labels",
+        "When paragraph actions are generated",
+        "Then each paragraph receives targeted problems and action instructions"
+      ],
+      "passes": false
+    },
+    {
+      "id": "F052",
+      "category": "edit-plan",
+      "description": "Generate reorder opportunities, compression targets, and rhythm/concreteness interventions",
+      "priority": 3,
+      "complexity": "moderate",
+      "steps": [
+        "Given full-document diagnostics",
+        "When advanced plan suggestions run",
+        "Then reorder, compression, rhythm, and concreteness opportunities are emitted"
+      ],
+      "passes": false
+    },
+    {
+      "id": "F053",
+      "category": "rewrite-brief",
+      "description": "Generate Codex-ready rewrite brief markdown artifact with venue summary, hard constraints, and non-goals",
+      "priority": 2,
+      "complexity": "moderate",
+      "steps": [
+        "Given analysis outputs and constraints",
+        "When rewrite brief generation runs",
+        "Then a markdown brief file is created under artifacts with required sections"
+      ],
+      "passes": false
+    },
+    {
+      "id": "F054",
+      "category": "cli",
+      "description": "Implement `efc analyze` command orchestrating ingestion, diagnostics, scoring, and report emission",
+      "priority": 1,
+      "complexity": "complex",
+      "steps": [
+        "Given a valid draft and venue",
+        "When `efc analyze` is executed",
+        "Then diagnostics, scorecard, and artifacts are generated with exit code semantics"
+      ],
+      "passes": false
+    },
+    {
+      "id": "F055",
+      "category": "cli",
+      "description": "Implement `efc brief` command to emit standalone rewrite brief artifacts from analysis context",
+      "priority": 2,
+      "complexity": "simple",
+      "steps": [
+        "Given a draft and venue",
+        "When `efc brief` is executed",
+        "Then a rewrite brief artifact is produced at the requested output path"
+      ],
+      "passes": false
+    },
+    {
+      "id": "F056",
+      "category": "verifier",
+      "description": "Implement `efc verify` command for original-versus-revised compliance and preservation checks",
+      "priority": 1,
+      "complexity": "complex",
+      "steps": [
+        "Given original and revised drafts",
+        "When `efc verify` is executed",
+        "Then compliance pass/fail and preservation findings are reported"
+      ],
+      "passes": false
+    },
+    {
+      "id": "F057",
+      "category": "verifier",
+      "description": "Build preservation-audit engine for key term retention, actor changes, polarity shifts, and recommendation drift",
+      "priority": 1,
+      "complexity": "complex",
+      "steps": [
+        "Given aligned original and revised drafts",
+        "When preservation audit runs",
+        "Then drift findings are emitted across configured dimensions with severities"
+      ],
+      "passes": false
+    },
+    {
+      "id": "F058",
+      "category": "verifier",
+      "description": "Detect likely unsupported new claims and unresolved weak paragraphs in revised drafts",
+      "priority": 2,
+      "complexity": "complex",
+      "steps": [
+        "Given a revised draft with inserted claims",
+        "When regression detection runs",
+        "Then suspicious new claims and weak paragraphs are surfaced for manual review"
+      ],
+      "passes": false
+    },
+    {
+      "id": "F059",
+      "category": "reports",
+      "description": "Implement rich console, JSON, and markdown report renderers for analysis and verification outputs",
+      "priority": 2,
+      "complexity": "moderate",
+      "steps": [
+        "Given completed analysis models",
+        "When report renderers execute",
+        "Then console output and serialized JSON/markdown artifacts match schema expectations"
+      ],
+      "passes": false
+    },
+    {
+      "id": "F060",
+      "category": "quality-and-ops",
+      "description": "Create unit, golden, regression, and performance smoke tests with deterministic fixtures and logged transformations",
+      "priority": 1,
+      "complexity": "complex",
+      "steps": [
+        "Given the implemented pipeline and fixtures",
+        "When the test suite runs",
+        "Then required unit, golden, regression, and timing checks pass within defined thresholds"
+      ],
+      "passes": false
+    }
+  ]
+}

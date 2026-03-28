@@ -90,6 +90,10 @@ export interface BuildHarnessArgsOptions {
    */
   modelEvaluator?: string;
   /**
+   * Override the generated project type (`--project-type`).
+   */
+  projectType?: string;
+  /**
    * Override the dashboard URL (`--dashboard-url`).
    * Falls back to `config.dashboard.url` when absent.
    */
@@ -138,7 +142,7 @@ export function spawnHarness(
   }
 
   if (options.logPath !== undefined) {
-    args.push("--log", options.logPath);
+    args.push("--log-file", options.logPath);
   }
 
   return execa("python3", args);
@@ -215,6 +219,10 @@ export function buildHarnessArgs(
   // --model-evaluator: option override takes precedence over config evaluator
   const modelEvaluator = options.modelEvaluator ?? config.models.evaluator;
   args.push("--model-evaluator", modelEvaluator);
+
+  if (options.projectType) {
+    args.push("--project-type", options.projectType);
+  }
 
   // --dashboard-url: option override takes precedence over config dashboard url
   const dashboardUrl = options.dashboardUrl ?? config.dashboard.url;

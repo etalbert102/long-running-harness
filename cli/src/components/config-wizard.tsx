@@ -49,9 +49,9 @@ export interface ConfigWizardProps {
 
 /** Available model choices shown in the select prompts. */
 const MODEL_ITEMS = [
-  { label: "claude-opus-4-5", value: "claude-opus-4-5" },
-  { label: "claude-sonnet-4-5", value: "claude-sonnet-4-5" },
-  { label: "claude-haiku-3-5", value: "claude-haiku-3-5" },
+  { label: "gpt-5.3-codex", value: "gpt-5.3-codex" },
+  { label: "gpt-5.4", value: "gpt-5.4" },
+  { label: "gpt-5.4-mini", value: "gpt-5.4-mini" },
 ];
 
 /** Wizard step indices. */

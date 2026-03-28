@@ -30,13 +30,14 @@ const helpText = `
     --version           Show the CLI version
     --model             Model to use for the generator agent
     --model-evaluator   Model to use for the evaluator agent
+    --project-type      Force generated project type (python or node)
     --dashboard-url     URL of the harness dashboard
     --multi             Run multiple features in parallel
     --single            Run a single feature (default mode)
 
   Examples
     $ harness run app_spec.md
-    $ harness run app_spec.md --model claude-opus-4-6 --multi
+    $ harness run app_spec.md --model gpt-5.3-codex --project-type python --multi
     $ harness config
     $ harness history
 `;
@@ -62,6 +63,11 @@ export function parseCli(argv?: readonly string[]) {
       /** Model to use for the evaluator agent. */
       modelEvaluator: {
         type: "string",
+      },
+      /** Force generated project type. */
+      projectType: {
+        type: "string",
+        choices: ["python", "node"],
       },
       /** URL of the harness dashboard. */
       dashboardUrl: {
@@ -99,7 +105,7 @@ export async function routeCommand(
         console.error("Usage: harness run <spec.md>");
         process.exit(1);
       }
-      await runCommand(specPath);
+      await runCommand(specPath, cli.flags);
       break;
     }
 

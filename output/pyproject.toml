@@ -1,0 +1,40 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "editorial-fit-compiler"
+version = "0.1.0"
+description = "Editorial Fit Compiler CLI"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+  "typer>=0.12,<1.0",
+  "pydantic>=2.0,<3.0",
+  "python-docx>=1.1.0,<2.0",
+  "nltk>=3.8,<4.0",
+  "rapidfuzz>=3.0,<4.0",
+  "pyyaml>=6.0,<7.0",
+  "rich>=13.0,<14.0",
+  "jinja2>=3.1,<4.0",
+]
+
+[project.scripts]
+efc = "editorial_fit_compiler.cli.main:main"
+
+[project.optional-dependencies]
+dev = [
+  "pytest>=8.0,<9.0",
+]
+
+[dependency-groups]
+dev = [
+  "pytest>=8.0,<9.0",
+]
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+
+[tool.setuptools.packages.find]
+where = ["src"]
+

@@ -1,11 +1,11 @@
-"""Planner agent — decomposes app_spec.md into feature_list.json."""
+"""Planner agent decomposes app_spec.md into feature_list.json."""
 
 import logging
 from pathlib import Path
 
-from claude_agent_sdk import query, ResultMessage
-
-from harness.client import make_options, OUTPUT_DIR
+from harness.backend import run_agent
+from harness.client import get_output_dir
+from harness.io_utils import read_text_file
 
 logger = logging.getLogger("harness.planner")
 
@@ -13,48 +13,38 @@ PROMPT_PATH = Path(__file__).resolve().parent.parent / "prompts" / "planner.md"
 
 
 async def run_planner(app_spec_path: Path) -> bool:
-    """Run the planner agent to create feature_list.json.
-
-    Args:
-        app_spec_path: Path to the app_spec.md file.
-
-    Returns:
-        True if feature_list.json was created successfully.
-    """
+    """Run the planner agent to create feature_list.json."""
     logger.info("[planner] Starting planner agent")
 
-    # Read the system prompt and app spec
-    system_prompt = PROMPT_PATH.read_text()
-    app_spec = app_spec_path.read_text()
+    system_prompt = read_text_file(PROMPT_PATH)
+    app_spec = read_text_file(app_spec_path)
 
-    # Copy app_spec into output directory
-    OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
-    (OUTPUT_DIR / "app_spec.md").write_text(app_spec)
+    output_dir = get_output_dir()
+    (output_dir / "app_spec.md").write_text(app_spec)
 
     prompt = (
-        f"Here is the product specification. Decompose it into a comprehensive "
-        f"feature list with BDD scenarios.\n\n"
-        f"---\n\n{app_spec}"
+        "Here is the product specification. Decompose it into a comprehensive "
+        f"feature list with BDD scenarios.\n\n---\n\n{app_spec}"
     )
 
-    options = make_options(
-        system_prompt=system_prompt,
+    result = run_agent(
         role="planner",
-        max_budget_usd=10.0,  # Planner is a one-shot — shouldn't cost much
+        system_prompt=system_prompt,
+        prompt=prompt,
+        cwd=output_dir,
+    )
+    if result.error:
+        logger.error(f"[planner] Session failed: {result.error}")
+        return False
+
+    logger.info(
+        f"[planner] Session complete: cost=${result.cost_usd:.4f}, turns={result.num_turns}"
     )
 
-    result_text = ""
-    async for message in query(prompt=prompt, options=options):
-        if isinstance(message, ResultMessage):
-            cost = message.total_cost_usd or 0.0
-            logger.info(f"[planner] Session complete: cost=${cost:.4f}, turns={message.num_turns}")
-            result_text = f"cost={cost:.4f}"
-
-    # Verify output
-    feature_list = OUTPUT_DIR / "feature_list.json"
+    feature_list = output_dir / "feature_list.json"
     if feature_list.exists():
         logger.info(f"[planner] Created feature_list.json ({feature_list.stat().st_size} bytes)")
         return True
-    else:
-        logger.error("[planner] feature_list.json was not created")
-        return False
+
+    logger.error("[planner] feature_list.json was not created")
+    return False

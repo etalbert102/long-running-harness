@@ -315,7 +315,7 @@ export function handleHarnessKey(
  * 1. On mount, a unique session ID is derived and a log file path is created
  *    under `~/.harness/logs/<id>.log`.
  * 2. The Python process is spawned via `python3 -m harness <specPath> [flags]`
- *    with the log path appended as `--log <path>`.
+ *    with the log path appended as `--log-file <path>`.
  * 3. {@link useLogTail} begins watching the log file; each new line is decoded
  *    by {@link parseLine} and folded into the accumulated run state via
  *    {@link reduceEvent}.
@@ -358,7 +358,7 @@ export function useHarness(
   // Spawn the Python process on mount
   useEffect(() => {
     const args = buildHarnessArgs(specPath, options, config);
-    args.push("--log", logPathRef.current);
+    args.push("--log-file", logPathRef.current);
 
     const p = execa("python3", args);
     procRef.current = p;

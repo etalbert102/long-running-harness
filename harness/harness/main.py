@@ -57,10 +57,23 @@ def parse_args() -> argparse.Namespace:
         help="Bearer token for dashboard ingest endpoint",
     )
     parser.add_argument(
+        "--provider",
+        type=str,
+        default="codex",
+        help="Agent backend provider (default: codex)",
+    )
+    parser.add_argument(
+        "--project-type",
+        type=str,
+        choices=("python", "node"),
+        default=None,
+        help="Force validator/tooling profile for generated project",
+    )
+    parser.add_argument(
         "--model",
         type=str,
-        default="claude-sonnet-4-6",
-        help="Default model for all agent roles (default: claude-sonnet-4-6)",
+        default="gpt-5.3-codex",
+        help="Default model for all agent roles (default: gpt-5.3-codex)",
     )
     parser.add_argument(
         "--model-planner",
@@ -85,6 +98,11 @@ def parse_args() -> argparse.Namespace:
         type=str,
         default=None,
         help="Path to log file (in addition to stderr). Default: harness-{timestamp}.log",
+    )
+    parser.add_argument(
+        "--multi",
+        action="store_true",
+        help="Use architect-driven multi-service orchestration",
     )
     return parser.parse_args()
 
@@ -115,6 +133,10 @@ def main() -> None:
         os.environ["DASHBOARD_URL"] = args.dashboard_url
     if args.dashboard_secret:
         os.environ["DASHBOARD_SECRET"] = args.dashboard_secret
+    if args.provider:
+        os.environ["HARNESS_PROVIDER"] = args.provider
+    if args.project_type:
+        os.environ["HARNESS_PROJECT_TYPE"] = args.project_type
     if args.model:
         os.environ["HARNESS_MODEL"] = args.model
     if args.model_planner:
@@ -125,9 +147,13 @@ def main() -> None:
         os.environ["HARNESS_MODEL_EVALUATOR"] = args.model_evaluator
 
     from harness.client import get_model_for_role
-    mode = "single" if args.single else "multi (architect-driven)"
+    use_multi = args.multi and not args.single
+    mode = "single" if args.single else "multi (architect-driven)" if use_multi else "single"
     logger.info(f"Starting harness with spec: {args.spec}")
     logger.info(f"Mode: {mode}")
+    logger.info(f"Provider: {os.environ['HARNESS_PROVIDER']}")
+    if args.project_type:
+        logger.info(f"Project type override: {args.project_type}")
     logger.info(f"Models — planner: {get_model_for_role('planner')}, generator: {get_model_for_role('generator')}, evaluator: {get_model_for_role('evaluator')}")
     logger.info(f"Log file: {log_file}")
     if args.dashboard_url:
@@ -135,8 +161,10 @@ def main() -> None:
 
     if args.single:
         asyncio.run(run_orchestrator(args.spec.resolve()))
-    else:
+    elif use_multi:
         asyncio.run(run_multi_orchestrator(args.spec.resolve()))
+    else:
+        asyncio.run(run_orchestrator(args.spec.resolve()))
 
 
 if __name__ == "__main__":
