@@ -239,14 +239,14 @@ class BaseModel:
             return parsed_str
 
         if expected_type is int:
-            if not isinstance(raw_value, int):
+            if isinstance(raw_value, bool) or not isinstance(raw_value, int):
                 msg = "Expected int value"
                 raise ValidationError(msg)
             cls._validate_numeric_bounds(raw_value, field_info)
             return raw_value
 
         if expected_type is float:
-            if not isinstance(raw_value, (int, float)):
+            if isinstance(raw_value, bool) or not isinstance(raw_value, (int, float)):
                 msg = "Expected float value"
                 raise ValidationError(msg)
             parsed_float = float(raw_value)
