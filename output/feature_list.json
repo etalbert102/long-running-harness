@@ -193,7 +193,7 @@
         "When span utilities are invoked",
         "Then exact evidence slices and index mappings are returned"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "F016",
