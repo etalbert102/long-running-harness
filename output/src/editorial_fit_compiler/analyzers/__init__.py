@@ -18,6 +18,13 @@ from .hedge_density import (
     estimate_hedge_density,
     estimate_hedge_density_in_paragraphs,
 )
+from .nominalization_density import (
+    NominalizationDensityMetrics,
+    NominalizationEvidence,
+    ParagraphNominalizationDensity,
+    estimate_nominalization_density,
+    estimate_nominalization_density_in_paragraphs,
+)
 from .punctuation_markers import (
     ForbiddenPunctuationEvidence,
     ForbiddenPunctuationMetrics,
@@ -48,6 +55,11 @@ __all__ = [
     "HedgeEvidence",
     "estimate_hedge_density",
     "estimate_hedge_density_in_paragraphs",
+    "NominalizationDensityMetrics",
+    "NominalizationEvidence",
+    "ParagraphNominalizationDensity",
+    "estimate_nominalization_density",
+    "estimate_nominalization_density_in_paragraphs",
     "ForbiddenPunctuationEvidence",
     "ForbiddenPunctuationMetrics",
     "detect_forbidden_punctuation",

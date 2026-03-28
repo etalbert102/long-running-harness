@@ -1,0 +1,95 @@
+"""Tests for nominalization density using suffix and lexicon heuristics."""
+
+from __future__ import annotations
+
+import pytest
+
+from editorial_fit_compiler.analyzers import (
+    estimate_nominalization_density,
+    estimate_nominalization_density_in_paragraphs,
+)
+from editorial_fit_compiler.core.models import Paragraph
+
+
+def test_estimate_nominalization_density_reports_suffix_and_lexicon_matches() -> None:
+    """Free-text nominalization analysis should report density and heuristic evidence."""
+    text = "Coordination improved after analysis and growth."
+
+    metrics = estimate_nominalization_density(text)
+
+    assert metrics.nominalization_count == 3
+    assert metrics.word_count == 6
+    assert metrics.nominalization_density_score == pytest.approx(3 / 6)
+    assert metrics.paragraph_densities == ()
+    assert tuple(span.nominalization for span in metrics.evidence_spans) == (
+        "coordination",
+        "analysis",
+        "growth",
+    )
+    assert tuple(span.heuristic for span in metrics.evidence_spans) == (
+        "suffix",
+        "lexicon",
+        "lexicon",
+    )
+
+
+def test_estimate_nominalization_density_supports_custom_suffix_and_lexicon() -> None:
+    """Caller-provided heuristics should drive what is counted as nominalization."""
+    text = "Friendship and choice matter while coordination continues."
+
+    metrics = estimate_nominalization_density(
+        text,
+        nominalization_suffixes=("ship",),
+        nominalization_lexicon=("choice",),
+    )
+
+    assert metrics.nominalization_count == 2
+    assert metrics.word_count == 7
+    assert metrics.nominalization_density_score == pytest.approx(2 / 7)
+    assert tuple(span.nominalization for span in metrics.evidence_spans) == (
+        "friendship",
+        "choice",
+    )
+    assert tuple(span.heuristic for span in metrics.evidence_spans) == ("suffix", "lexicon")
+
+
+def test_estimate_nominalization_density_in_paragraphs_reports_paragraph_and_document_scores(
+) -> None:
+    """Paragraph analysis should emit per-paragraph and document-level density."""
+    paragraph_one_text = "Implementation and coordination improved."
+    paragraph_two_text = "Teams adapt quickly."
+    paragraph_two_start = len(paragraph_one_text) + 2
+    paragraphs = (
+        Paragraph(
+            paragraph_id="p1",
+            text=paragraph_one_text,
+            start_char=0,
+            end_char=len(paragraph_one_text),
+            sentences=(),
+        ),
+        Paragraph(
+            paragraph_id="p2",
+            text=paragraph_two_text,
+            start_char=paragraph_two_start,
+            end_char=paragraph_two_start + len(paragraph_two_text),
+            sentences=(),
+        ),
+    )
+
+    metrics = estimate_nominalization_density_in_paragraphs(paragraphs)
+
+    assert metrics.nominalization_count == 2
+    assert metrics.word_count == 7
+    assert metrics.nominalization_density_score == pytest.approx(2 / 7)
+    assert tuple(item.paragraph_id for item in metrics.paragraph_densities) == ("p1", "p2")
+    assert tuple(item.nominalization_count for item in metrics.paragraph_densities) == (2, 0)
+    assert tuple(item.word_count for item in metrics.paragraph_densities) == (4, 3)
+    assert tuple(item.nominalization_density_score for item in metrics.paragraph_densities) == (
+        pytest.approx(2 / 4),
+        pytest.approx(0.0),
+    )
+    assert tuple(span.paragraph_id for span in metrics.evidence_spans) == ("p1", "p1")
+    assert tuple(span.start_char for span in metrics.evidence_spans) == (
+        paragraph_one_text.index("Implementation"),
+        paragraph_one_text.index("coordination"),
+    )

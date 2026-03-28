@@ -349,7 +349,7 @@
         "When nominalization analysis runs",
         "Then per-paragraph and document-level nominalization density is reported"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "F028",
