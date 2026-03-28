@@ -149,7 +149,7 @@ def test_normalize_draft_text_preserves_paragraph_boundaries_from_mixed_whitespa
 @pytest.mark.parametrize(
     ("raw_text", "expected"),
     [
-        ("inter-\nnational policy", "international policy"),
+        ("inter-\nnational policy", "inter-national policy"),
         (
             "Reach us at policy.team@\nexample.org for details",
             "Reach us at policy.team@example.org for details",
@@ -170,6 +170,44 @@ def test_normalize_draft_text_preserves_tokens_across_wrapped_lines(
 ) -> None:
     """Normalization should avoid introducing spaces that mutate wrapped token meaning."""
     assert normalize_draft_text(raw_text) == expected
+
+
+def test_normalize_draft_text_preserves_hyphenated_compounds_at_line_wraps() -> None:
+    """Normalization should never delete explicit hyphens when merging wrapped lines."""
+    raw_text = "state-\nof-the-art methods"
+    assert normalize_draft_text(raw_text) == "state-of-the-art methods"
+
+
+def test_normalize_draft_text_inserts_space_after_colon_wrapped_headings() -> None:
+    """Normalization should preserve token boundaries after punctuation such as colons."""
+    raw_text = "Agenda:\nToday we review findings."
+    assert normalize_draft_text(raw_text) == "Agenda: Today we review findings."
+
+
+@pytest.mark.parametrize(
+    ("raw_text", "expected_tokens"),
+    [
+        (
+            "inter-\nnational cooperation\n\nAgenda:\nToday",
+            ["inter-national", "cooperation", "Agenda:", "Today"],
+        ),
+        (
+            "Use key=\nvalue and path C:\\temp\\\nlogs",
+            ["Use", "key=value", "and", "path", "C:\\temp\\logs"],
+        ),
+        (
+            "Contact policy.team@\nexample.org or visit https://example.org/research/\nbrief",
+            ["Contact", "policy.team@example.org", "or", "visit", "https://example.org/research/brief"],
+        ),
+    ],
+)
+def test_normalization_contract_preserves_representative_token_identities(
+    raw_text: str,
+    expected_tokens: list[str],
+) -> None:
+    """Normalization should preserve expected token identities on edge corpora."""
+    normalized = normalize_draft_text(raw_text)
+    assert normalized.split() == expected_tokens
 
 
 def test_load_document_from_path_loads_markdown_and_creates_paragraphs() -> None:

@@ -12,7 +12,6 @@ from editorial_fit_compiler.core.models import Document, Paragraph
 SUPPORTED_DRAFT_EXTENSIONS: tuple[str, ...] = (".md", ".txt", ".docx")
 _URL_FRAGMENT_RE = re.compile(r"^(?:https?://|www\.)\S*$")
 _EMAIL_FRAGMENT_RE = re.compile(r"^[^\s@]+@[^\s@]*$")
-_TOKEN_HEAD_RE = re.compile(r"^\S+")
 _TOKEN_TAIL_RE = re.compile(r"\S+$")
 
 
@@ -24,19 +23,17 @@ def _merge_wrapped_line(previous: str, current: str) -> str:
         return previous
 
     previous_tail_match = _TOKEN_TAIL_RE.search(previous)
-    current_head_match = _TOKEN_HEAD_RE.search(current)
     previous_tail = previous_tail_match.group(0) if previous_tail_match else ""
-    current_head = current_head_match.group(0) if current_head_match else ""
 
-    if re.search(r"[A-Za-z]-$", previous_tail) and re.match(r"^[A-Za-z]", current_head):
-        # Treat terminal hyphen + alpha-start as a discretionary wrap hyphen.
-        return f"{previous[:-1]}{current}"
+    if previous_tail.endswith("-"):
+        # Preserve explicit hyphens across wraps; deleting them can corrupt terms.
+        return f"{previous}{current}"
 
     if _URL_FRAGMENT_RE.match(previous_tail):
         return f"{previous}{current}"
     if _EMAIL_FRAGMENT_RE.match(previous_tail):
         return f"{previous}{current}"
-    if previous_tail.endswith(("/", "@", ":", "=", "+", "_", "\\")):
+    if previous_tail.endswith(("/", "@", "=", "+", "_", "\\")):
         return f"{previous}{current}"
 
     return f"{previous} {current}"
