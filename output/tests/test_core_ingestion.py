@@ -146,6 +146,32 @@ def test_normalize_draft_text_preserves_paragraph_boundaries_from_mixed_whitespa
     assert normalized == "First paragraph line still first\n\nSecond paragraph"
 
 
+@pytest.mark.parametrize(
+    ("raw_text", "expected"),
+    [
+        ("inter-\nnational policy", "international policy"),
+        (
+            "Reach us at policy.team@\nexample.org for details",
+            "Reach us at policy.team@example.org for details",
+        ),
+        (
+            "See https://example.org/research/\nbrief for context",
+            "See https://example.org/research/brief for context",
+        ),
+        (
+            "set config_value=\ndefault in the script",
+            "set config_value=default in the script",
+        ),
+    ],
+)
+def test_normalize_draft_text_preserves_tokens_across_wrapped_lines(
+    raw_text: str,
+    expected: str,
+) -> None:
+    """Normalization should avoid introducing spaces that mutate wrapped token meaning."""
+    assert normalize_draft_text(raw_text) == expected
+
+
 def test_load_document_from_path_loads_markdown_and_creates_paragraphs() -> None:
     """Ingestion should load markdown text and map paragraph spans into a document model."""
     draft_path = _ingestion_fixture_path("sample.md")

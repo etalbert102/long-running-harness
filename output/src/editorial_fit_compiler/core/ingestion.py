@@ -10,6 +10,46 @@ from typing import Any
 from editorial_fit_compiler.core.models import Document, Paragraph
 
 SUPPORTED_DRAFT_EXTENSIONS: tuple[str, ...] = (".md", ".txt", ".docx")
+_URL_FRAGMENT_RE = re.compile(r"^(?:https?://|www\.)\S*$")
+_EMAIL_FRAGMENT_RE = re.compile(r"^[^\s@]+@[^\s@]*$")
+_TOKEN_HEAD_RE = re.compile(r"^\S+")
+_TOKEN_TAIL_RE = re.compile(r"\S+$")
+
+
+def _merge_wrapped_line(previous: str, current: str) -> str:
+    """Merge two logical lines while preserving token semantics across wraps."""
+    if not previous:
+        return current
+    if not current:
+        return previous
+
+    previous_tail_match = _TOKEN_TAIL_RE.search(previous)
+    current_head_match = _TOKEN_HEAD_RE.search(current)
+    previous_tail = previous_tail_match.group(0) if previous_tail_match else ""
+    current_head = current_head_match.group(0) if current_head_match else ""
+
+    if re.search(r"[A-Za-z]-$", previous_tail) and re.match(r"^[A-Za-z]", current_head):
+        # Treat terminal hyphen + alpha-start as a discretionary wrap hyphen.
+        return f"{previous[:-1]}{current}"
+
+    if _URL_FRAGMENT_RE.match(previous_tail):
+        return f"{previous}{current}"
+    if _EMAIL_FRAGMENT_RE.match(previous_tail):
+        return f"{previous}{current}"
+    if previous_tail.endswith(("/", "@", ":", "=", "+", "_", "\\")):
+        return f"{previous}{current}"
+
+    return f"{previous} {current}"
+
+
+def _normalize_paragraph_lines(lines: list[str]) -> str:
+    """Normalize wrapped lines inside one paragraph without changing token meaning."""
+    if not lines:
+        return ""
+    merged = lines[0]
+    for line in lines[1:]:
+        merged = _merge_wrapped_line(merged, line)
+    return merged
 
 
 def normalize_draft_text(raw_text: str) -> str:
@@ -20,7 +60,7 @@ def normalize_draft_text(raw_text: str) -> str:
     - line endings are normalized to ``\n``
     - horizontal whitespace runs collapse to a single space
     - one or more blank lines delimit paragraphs
-    - line wraps inside a paragraph collapse into single spaces
+    - line wraps inside a paragraph collapse deterministically, preserving tokens
     """
     normalized_line_endings = raw_text.replace("\r\n", "\n").replace("\r", "\n")
     if normalized_line_endings.startswith("\ufeff"):
@@ -34,13 +74,13 @@ def normalize_draft_text(raw_text: str) -> str:
         canonical_line = re.sub(r"[^\S\n]+", " ", line).strip()
         if not canonical_line:
             if current_paragraph_lines:
-                paragraphs.append(" ".join(current_paragraph_lines))
+                paragraphs.append(_normalize_paragraph_lines(current_paragraph_lines))
                 current_paragraph_lines = []
             continue
         current_paragraph_lines.append(canonical_line)
 
     if current_paragraph_lines:
-        paragraphs.append(" ".join(current_paragraph_lines))
+        paragraphs.append(_normalize_paragraph_lines(current_paragraph_lines))
 
     return "\n\n".join(paragraphs)
 

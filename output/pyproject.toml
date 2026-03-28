@@ -25,11 +25,15 @@ efc = "editorial_fit_compiler.cli.main:main"
 [project.optional-dependencies]
 dev = [
   "pytest>=8.0,<9.0",
+  "ruff>=0.6,<1.0",
+  "mypy>=1.11,<2.0",
 ]
 
 [dependency-groups]
 dev = [
   "pytest>=8.0,<9.0",
+  "ruff>=0.6,<1.0",
+  "mypy>=1.11,<2.0",
 ]
 
 [tool.setuptools]
@@ -38,3 +42,45 @@ package-dir = {"" = "src"}
 [tool.setuptools.packages.find]
 where = ["src"]
 
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]
+cache_dir = ".tmp/pytest_cache"
+norecursedirs = [
+  ".git",
+  ".venv",
+  ".tmp",
+  ".ruff_cache",
+  ".pytest_cache",
+  "dist",
+  "build",
+  "*.egg-info",
+  "pytest-cache-files-*",
+]
+
+[tool.ruff]
+target-version = "py311"
+line-length = 100
+src = ["src", "tests"]
+exclude = [
+  ".venv",
+  ".tmp",
+  "dist",
+  "build",
+  ".pytest_cache",
+  ".ruff_cache",
+]
+
+[tool.ruff.lint]
+select = ["E", "F", "I"]
+
+[tool.mypy]
+python_version = "3.11"
+mypy_path = ["src"]
+files = ["src"]
+strict = true
+warn_unused_ignores = true
+show_error_codes = true
+
+[tool.editorial_fit_compiler]
+verify_command = "python -m pytest && ruff check src tests && mypy"
