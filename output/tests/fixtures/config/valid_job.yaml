@@ -1,0 +1,15 @@
+draft_path: drafts/input.md
+target_venue: smr
+constraints:
+  preserve_concepts:
+    - Behavioral Compression
+    - Decision-Space Erosion
+  forbid:
+    - em_dash
+    - citations
+  max_new_sentences: 3
+  word_count_tolerance_percent: 5
+preferences:
+  prioritize:
+    - executive_credibility
+    - concrete_language

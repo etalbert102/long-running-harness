@@ -63,7 +63,7 @@
         "When the config is loaded",
         "Then required fields and defaults are represented in typed models"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "F006",

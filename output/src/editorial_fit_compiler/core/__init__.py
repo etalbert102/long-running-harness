@@ -1,5 +1,6 @@
 """Core package for the Editorial Fit Compiler architecture."""
 
+from .config import ConfigConstraints, ConfigPreferences, UserConfig, load_user_config
 from .models import (
     AnalysisReport,
     AnalysisSummary,
@@ -17,6 +18,8 @@ from .models import (
 __all__ = [
     "AnalysisReport",
     "AnalysisSummary",
+    "ConfigConstraints",
+    "ConfigPreferences",
     "Constraint",
     "ConstraintSet",
     "Diagnostic",
@@ -26,4 +29,6 @@ __all__ = [
     "Paragraph",
     "Report",
     "Sentence",
+    "UserConfig",
+    "load_user_config",
 ]
