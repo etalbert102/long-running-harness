@@ -50,7 +50,7 @@
         "When data is parsed into domain models",
         "Then invalid shapes are rejected and valid models serialize deterministically"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "F005",
