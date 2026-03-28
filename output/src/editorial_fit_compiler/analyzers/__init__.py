@@ -44,6 +44,13 @@ from .punctuation_markers import (
     detect_forbidden_punctuation,
     detect_forbidden_punctuation_in_paragraphs,
 )
+from .sentence_opener_repetition import (
+    OpenerPatternCluster,
+    SentenceOpenerPattern,
+    SentenceOpenerRepetitionMetrics,
+    detect_repeated_sentence_openers,
+    detect_repeated_sentence_openers_in_paragraphs,
+)
 from .structure_metrics import (
     ParagraphLengthDistributionMetrics,
     SentenceLengthDistributionMetrics,
@@ -86,6 +93,11 @@ __all__ = [
     "ForbiddenPunctuationMetrics",
     "detect_forbidden_punctuation",
     "detect_forbidden_punctuation_in_paragraphs",
+    "OpenerPatternCluster",
+    "SentenceOpenerPattern",
+    "SentenceOpenerRepetitionMetrics",
+    "detect_repeated_sentence_openers",
+    "detect_repeated_sentence_openers_in_paragraphs",
     "ParagraphLengthDistributionMetrics",
     "SentenceLengthDistributionMetrics",
     "StructureMetrics",

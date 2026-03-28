@@ -388,7 +388,7 @@
         "When opener repetition analysis runs",
         "Then repeated pattern clusters are identified with severity"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "F031",
