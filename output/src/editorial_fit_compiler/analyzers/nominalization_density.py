@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import re
+import unicodedata
 from dataclasses import dataclass
 from typing import Iterable, Literal, Sequence
 
@@ -29,7 +30,13 @@ _DEFAULT_NOMINALIZATION_LEXICON: tuple[str, ...] = (
     "policy",
     "pressure",
 )
-_WORD_RE = re.compile(r"\b[0-9A-Za-z]+(?:[-'][0-9A-Za-z]+)*\b")
+_DEFAULT_SUFFIX_EXCLUSION_LEXICON: frozenset[str] = frozenset(
+    {
+        "business",
+        "witness",
+    }
+)
+_WORD_RE = re.compile(r"[^\W\d_]+(?:[-'][^\W\d_]+)*", re.UNICODE)
 
 
 @dataclass(frozen=True, slots=True)
@@ -178,12 +185,21 @@ def _normalize_entries(entries: Sequence[str]) -> tuple[str, ...]:
     normalized: list[str] = []
     seen: set[str] = set()
     for entry in entries:
-        normalized_entry = entry.strip().lower()
+        normalized_entry = _normalize_for_matching(entry)
         if not normalized_entry or normalized_entry in seen:
             continue
         seen.add(normalized_entry)
         normalized.append(normalized_entry)
     return tuple(normalized)
+
+
+def _normalize_for_matching(value: str) -> str:
+    """Normalize text for lexical matching across case and accented variants."""
+    stripped = value.strip().casefold()
+    if not stripped:
+        return ""
+    decomposed = unicodedata.normalize("NFKD", stripped)
+    return "".join(char for char in decomposed if not unicodedata.combining(char))
 
 
 def _build_evidence_for_text(
@@ -196,9 +212,10 @@ def _build_evidence_for_text(
     evidence_spans: list[NominalizationEvidence] = []
     for match in _WORD_RE.finditer(text):
         token_text = match.group(0)
-        normalized_token = token_text.lower()
+        normalized_token = token_text.casefold()
+        normalized_token_for_matching = _normalize_for_matching(token_text)
         heuristic = _match_heuristic(
-            token=normalized_token,
+            token=normalized_token_for_matching,
             nominalization_suffixes=nominalization_suffixes,
             nominalization_lexicon=nominalization_lexicon,
         )
@@ -225,9 +242,12 @@ def _match_heuristic(
     """Return the heuristic that matched a token, or None if not nominalized."""
     if token in nominalization_lexicon:
         return "lexicon"
+    if token in _DEFAULT_SUFFIX_EXCLUSION_LEXICON:
+        return None
 
     for suffix in nominalization_suffixes:
-        if len(token) <= len(suffix) + 1:
+        # A minimum 3-character stem reduces short-word suffix false positives.
+        if len(token) <= len(suffix) + 2:
             continue
         if token.endswith(suffix):
             return "suffix"

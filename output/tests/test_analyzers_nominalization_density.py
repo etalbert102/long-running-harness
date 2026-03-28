@@ -53,6 +53,45 @@ def test_estimate_nominalization_density_supports_custom_suffix_and_lexicon() ->
     assert tuple(span.heuristic for span in metrics.evidence_spans) == ("suffix", "lexicon")
 
 
+def test_estimate_nominalization_density_avoids_known_suffix_false_positives() -> None:
+    """Suffix matching should not count known lexical false positives such as business."""
+    text = "The business expanded after coordination."
+
+    metrics = estimate_nominalization_density(text)
+
+    assert metrics.nominalization_count == 1
+    assert metrics.word_count == 5
+    assert metrics.nominalization_density_score == pytest.approx(1 / 5)
+    assert tuple(span.nominalization for span in metrics.evidence_spans) == ("coordination",)
+    assert tuple(span.heuristic for span in metrics.evidence_spans) == ("suffix",)
+
+
+def test_estimate_nominalization_density_tokenizes_unicode_and_punctuation_boundaries() -> None:
+    """Unicode words should contribute to denominator and lexicon hits despite punctuation."""
+    text = "Évidence, policy; naïve coordination."
+
+    metrics = estimate_nominalization_density(text)
+
+    assert metrics.nominalization_count == 3
+    assert metrics.word_count == 4
+    assert metrics.nominalization_density_score == pytest.approx(3 / 4)
+    assert tuple(span.nominalization for span in metrics.evidence_spans) == (
+        "évidence",
+        "policy",
+        "coordination",
+    )
+    assert tuple(span.text for span in metrics.evidence_spans) == (
+        "Évidence",
+        "policy",
+        "coordination",
+    )
+    assert tuple(span.heuristic for span in metrics.evidence_spans) == (
+        "lexicon",
+        "lexicon",
+        "suffix",
+    )
+
+
 def test_estimate_nominalization_density_in_paragraphs_reports_paragraph_and_document_scores(
 ) -> None:
     """Paragraph analysis should emit per-paragraph and document-level density."""
@@ -93,3 +132,39 @@ def test_estimate_nominalization_density_in_paragraphs_reports_paragraph_and_doc
         paragraph_one_text.index("Implementation"),
         paragraph_one_text.index("coordination"),
     )
+
+
+def test_estimate_nominalization_density_in_paragraphs_supports_mixed_case_matching() -> None:
+    """Paragraph metrics should preserve IDs while matching nominalizations case-insensitively."""
+    first_text = "COORDINATION happens."
+    second_text = "Analysis improves."
+    second_start = len(first_text) + 1
+    paragraphs = (
+        Paragraph(
+            paragraph_id="p1",
+            text=first_text,
+            start_char=0,
+            end_char=len(first_text),
+            sentences=(),
+        ),
+        Paragraph(
+            paragraph_id="p2",
+            text=second_text,
+            start_char=second_start,
+            end_char=second_start + len(second_text),
+            sentences=(),
+        ),
+    )
+
+    metrics = estimate_nominalization_density_in_paragraphs(paragraphs)
+
+    assert metrics.nominalization_count == 2
+    assert metrics.word_count == 4
+    assert metrics.nominalization_density_score == pytest.approx(2 / 4)
+    assert tuple(item.paragraph_id for item in metrics.paragraph_densities) == ("p1", "p2")
+    assert tuple(item.nominalization_count for item in metrics.paragraph_densities) == (1, 1)
+    assert tuple(span.nominalization for span in metrics.evidence_spans) == (
+        "coordination",
+        "analysis",
+    )
+    assert tuple(span.text for span in metrics.evidence_spans) == ("COORDINATION", "Analysis")
