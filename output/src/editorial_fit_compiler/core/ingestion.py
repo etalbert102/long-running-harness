@@ -3,7 +3,9 @@
 from __future__ import annotations
 
 import re
+from collections.abc import Iterator
 from pathlib import Path
+from typing import Any
 
 from editorial_fit_compiler.core.models import Document, Paragraph
 
@@ -46,14 +48,55 @@ def _paragraphs_from_text(normalized_text: str) -> tuple[Paragraph, ...]:
 
 def _extract_docx_text(draft_path: Path) -> str:
     """Extract `.docx` paragraph text in source order as normalized draft text."""
-    from docx import Document as DocxDocument
+    try:
+        from docx import Document as DocxDocument
+        from docx.table import Table
+        from docx.text.paragraph import Paragraph as DocxParagraph
+    except ModuleNotFoundError as exc:
+        msg = (
+            "DOCX ingestion requires python-docx. Install dependencies with "
+            "`pip install -e .` or `pip install python-docx`."
+        )
+        raise RuntimeError(msg) from exc
 
-    docx_document = DocxDocument(str(draft_path))
-    paragraph_texts = [
-        paragraph.text
-        for paragraph in docx_document.paragraphs
-        if paragraph.text.strip()
-    ]
+    try:
+        docx_document = DocxDocument(str(draft_path))
+    except Exception as exc:
+        msg = (
+            f"Unable to read DOCX draft: {draft_path}. Ensure it is a valid, "
+            "non-corrupted `.docx` file."
+        )
+        raise ValueError(msg) from exc
+
+    def iter_block_texts(container: Any) -> Iterator[str]:
+        """Yield paragraph text from paragraphs and table cells in source order."""
+        if hasattr(container, "element") and hasattr(container.element, "body"):
+            parent_element = container.element.body
+        elif hasattr(container, "_tc"):
+            parent_element = container._tc
+        else:
+            return
+
+        for child in parent_element.iterchildren():
+            if child.tag.endswith("}p"):
+                paragraph = DocxParagraph(child, container)
+                paragraph_text = paragraph.text.strip()
+                if paragraph_text:
+                    yield paragraph_text
+                continue
+            if not child.tag.endswith("}tbl"):
+                continue
+            table = Table(child, container)
+            for row in table.rows:
+                seen_cells: set[int] = set()
+                for cell in row.cells:
+                    cell_id = id(cell._tc)
+                    if cell_id in seen_cells:
+                        continue
+                    seen_cells.add(cell_id)
+                    yield from iter_block_texts(cell)
+
+    paragraph_texts = list(iter_block_texts(docx_document))
     return normalize_draft_text("\n\n".join(paragraph_texts))
 
 
