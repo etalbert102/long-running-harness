@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+from importlib import resources
 from pathlib import Path
 from typing import Any, cast
 
@@ -12,6 +13,13 @@ from .config import _load_yaml_mapping
 from .models import DomainModel
 
 SUPPORTED_PROFILE_EXTENSIONS: tuple[str, ...] = (".yaml", ".yml", ".json")
+BUILTIN_VENUE_PROFILE_FILES: dict[str, str] = {
+    "smr": "smr.yaml",
+    "boston_review": "boston_review.yaml",
+    "hdsr": "hdsr.yaml",
+    "lawfare_like": "lawfare_like.yaml",
+    "general_policy_magazine": "general_policy_magazine.yaml",
+}
 
 
 class VenueAudience(DomainModel):
@@ -84,6 +92,30 @@ def load_venue_profile(profile_path: str | Path) -> VenueProfile:
         raise ValueError(msg)
 
     return VenueProfile.model_validate(cast(dict[str, Any], parsed))
+
+
+def load_builtin_venue_profile(venue_key: str) -> VenueProfile:
+    """Load and validate a packaged built-in v1 venue profile by key."""
+    builtin_filename = BUILTIN_VENUE_PROFILE_FILES.get(venue_key)
+    if builtin_filename is None:
+        supported = ", ".join(sorted(BUILTIN_VENUE_PROFILE_FILES))
+        msg = (
+            f"Unknown built-in venue profile '{venue_key}'. "
+            f"Supported built-ins: {supported}."
+        )
+        raise ValueError(msg)
+
+    profile_resource = resources.files("editorial_fit_compiler.core").joinpath(
+        "resources", "venue_profiles", builtin_filename
+    )
+    if not profile_resource.is_file():
+        msg = (
+            f"Built-in venue profile resource '{builtin_filename}' "
+            "is missing from packaged resources."
+        )
+        raise FileNotFoundError(msg)
+
+    return load_venue_profile(Path(str(profile_resource)))
 
 
 def _load_profile_mapping(profile_path: str | Path) -> Any:

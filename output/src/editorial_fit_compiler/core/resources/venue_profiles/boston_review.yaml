@@ -1,0 +1,20 @@
+profile_version: 1
+venue_id: boston_review
+audience:
+  primary_reader: public intellectuals
+  knowledge_level: advanced
+tone:
+  voice: argumentative
+  formality: formal
+structure_norms:
+  opener_style: tension-first
+  paragraph_length_preference: medium
+disfavored_markers:
+  markers:
+    - listicle_voice
+    - unsupported_claims
+score_weights:
+  opening_fit: 0.3
+  abstraction_control: 0.25
+  rhythm: 0.2
+  concreteness: 0.25

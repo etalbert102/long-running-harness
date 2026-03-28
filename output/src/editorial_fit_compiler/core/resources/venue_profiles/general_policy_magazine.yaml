@@ -1,0 +1,20 @@
+profile_version: 1
+venue_id: general_policy_magazine
+audience:
+  primary_reader: policy generalists
+  knowledge_level: intermediate
+tone:
+  voice: explanatory
+  formality: semi-formal
+structure_norms:
+  opener_style: consequence-first
+  paragraph_length_preference: short-to-medium
+disfavored_markers:
+  markers:
+    - jargon_stacking
+    - abstract_openers
+score_weights:
+  opening_fit: 0.3
+  abstraction_control: 0.25
+  rhythm: 0.2
+  concreteness: 0.25

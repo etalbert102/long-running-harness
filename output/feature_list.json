@@ -232,7 +232,7 @@
         "When profile resolution is requested",
         "Then the expected profile data is loaded from packaged resources"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "F019",

@@ -1,0 +1,20 @@
+profile_version: 1
+venue_id: lawfare_like
+audience:
+  primary_reader: legal policy practitioners
+  knowledge_level: advanced
+tone:
+  voice: legal-analytical
+  formality: formal
+structure_norms:
+  opener_style: issue-first
+  paragraph_length_preference: medium
+disfavored_markers:
+  markers:
+    - speculative_claims
+    - rhetorical_hyperbole
+score_weights:
+  opening_fit: 0.3
+  abstraction_control: 0.25
+  rhythm: 0.15
+  concreteness: 0.3

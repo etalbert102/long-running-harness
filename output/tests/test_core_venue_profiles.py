@@ -6,7 +6,12 @@ from pathlib import Path
 
 import pytest
 
-from editorial_fit_compiler.core.venue_profiles import VenueProfile, load_venue_profile
+from editorial_fit_compiler.core.venue_profiles import (
+    BUILTIN_VENUE_PROFILE_FILES,
+    VenueProfile,
+    load_builtin_venue_profile,
+    load_venue_profile,
+)
 from pydantic import ValidationError
 
 REQUIRED_TOP_LEVEL_FIELDS: tuple[str, ...] = (
@@ -79,6 +84,23 @@ def test_load_venue_profile_returns_actionable_schema_errors() -> None:
     """Invalid profile schema should include actionable nested field error details."""
     with pytest.raises(ValidationError, match=r"opening_fit|score_weights"):
         load_venue_profile(_fixture_path("invalid_schema_profile.json"))
+
+
+@pytest.mark.parametrize("venue_key", tuple(sorted(BUILTIN_VENUE_PROFILE_FILES)))
+def test_load_builtin_venue_profile_resolves_packaged_v1_profiles(venue_key: str) -> None:
+    """Built-in venue keys should resolve packaged resources into validated v1 profiles."""
+    loaded = load_builtin_venue_profile(venue_key)
+
+    assert isinstance(loaded, VenueProfile)
+    assert loaded.profile_version == 1
+    assert loaded.venue_id == venue_key
+    assert len(loaded.disfavored_markers.markers) >= 1
+
+
+def test_load_builtin_venue_profile_rejects_unknown_key() -> None:
+    """Unknown built-in keys should fail with supported-key guidance."""
+    with pytest.raises(ValueError, match=r"Unknown built-in venue profile|Supported built-ins"):
+        load_builtin_venue_profile("unknown_venue")
 
 
 def _fixture_path(filename: str) -> Path:

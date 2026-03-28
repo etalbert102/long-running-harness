@@ -1,0 +1,20 @@
+profile_version: 1
+venue_id: hdsr
+audience:
+  primary_reader: data science leaders
+  knowledge_level: advanced
+tone:
+  voice: evidence-driven
+  formality: formal
+structure_norms:
+  opener_style: question-first
+  paragraph_length_preference: medium
+disfavored_markers:
+  markers:
+    - vague_quantifiers
+    - unsupported_generalizations
+score_weights:
+  opening_fit: 0.25
+  abstraction_control: 0.2
+  rhythm: 0.2
+  concreteness: 0.35
