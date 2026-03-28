@@ -13,14 +13,36 @@ SUPPORTED_DRAFT_EXTENSIONS: tuple[str, ...] = (".md", ".txt", ".docx")
 
 
 def normalize_draft_text(raw_text: str) -> str:
-    """Normalize raw draft text to stable newlines and trimmed trailing whitespace."""
+    """Normalize raw text into canonical paragraph-separated prose.
+
+    The normalization rules preserve token meaning while producing deterministic
+    whitespace:
+    - line endings are normalized to ``\n``
+    - horizontal whitespace runs collapse to a single space
+    - one or more blank lines delimit paragraphs
+    - line wraps inside a paragraph collapse into single spaces
+    """
     normalized_line_endings = raw_text.replace("\r\n", "\n").replace("\r", "\n")
     if normalized_line_endings.startswith("\ufeff"):
         normalized_line_endings = normalized_line_endings[1:]
 
     lines = normalized_line_endings.split("\n")
-    trimmed_lines = [line.rstrip() for line in lines]
-    return "\n".join(trimmed_lines).strip("\n")
+    paragraphs: list[str] = []
+    current_paragraph_lines: list[str] = []
+
+    for line in lines:
+        canonical_line = re.sub(r"[^\S\n]+", " ", line).strip()
+        if not canonical_line:
+            if current_paragraph_lines:
+                paragraphs.append(" ".join(current_paragraph_lines))
+                current_paragraph_lines = []
+            continue
+        current_paragraph_lines.append(canonical_line)
+
+    if current_paragraph_lines:
+        paragraphs.append(" ".join(current_paragraph_lines))
+
+    return "\n\n".join(paragraphs)
 
 
 def _paragraphs_from_text(normalized_text: str) -> tuple[Paragraph, ...]:

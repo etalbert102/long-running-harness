@@ -141,7 +141,7 @@
         "When normalization is applied",
         "Then output text is canonicalized without changing token meaning"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "F012",

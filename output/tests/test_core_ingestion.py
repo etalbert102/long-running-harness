@@ -131,10 +131,19 @@ def _install_fake_docx_modules(
 
 
 def test_normalize_draft_text_normalizes_line_endings_and_trailing_whitespace() -> None:
-    """Normalization should canonicalize line endings and trim trailing spaces per line."""
-    raw_text = "\ufeffLine one  \r\nLine two\t\rLine three\n"
+    """Normalization should canonicalize whitespace while preserving token sequence."""
+    raw_text = "\ufeffLine one  \r\nLine\t two\rLine three\n"
     normalized = normalize_draft_text(raw_text)
-    assert normalized == "Line one\nLine two\nLine three"
+    assert normalized == "Line one Line two Line three"
+
+
+def test_normalize_draft_text_preserves_paragraph_boundaries_from_mixed_whitespace() -> None:
+    """Normalization should preserve paragraph boundaries using canonical blank-line separators."""
+    raw_text = "First\tparagraph line\r\nstill first   \n \t \r\n\t\r\nSecond paragraph"
+
+    normalized = normalize_draft_text(raw_text)
+
+    assert normalized == "First paragraph line still first\n\nSecond paragraph"
 
 
 def test_load_document_from_path_loads_markdown_and_creates_paragraphs() -> None:
