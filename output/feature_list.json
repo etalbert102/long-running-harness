@@ -154,7 +154,7 @@
         "When paragraph segmentation runs",
         "Then paragraphs are indexed in source order with reproducible IDs"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "F013",

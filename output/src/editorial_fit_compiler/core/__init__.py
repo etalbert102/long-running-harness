@@ -27,6 +27,7 @@ from .models import (
     SeverityMetadata,
 )
 from .paths import ArtifactPaths, resolve_artifact_paths, write_text_artifact
+from .segmentation import segment_normalized_paragraphs
 
 __all__ = [
     "AnalysisReport",
@@ -49,6 +50,7 @@ __all__ = [
     "Sentence",
     "SeverityLevel",
     "SeverityMetadata",
+    "segment_normalized_paragraphs",
     "ArtifactPaths",
     "UserConfig",
     "load_document_from_path",

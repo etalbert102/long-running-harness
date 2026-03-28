@@ -7,7 +7,8 @@ from collections.abc import Iterator
 from pathlib import Path
 from typing import Any
 
-from editorial_fit_compiler.core.models import Document, Paragraph
+from editorial_fit_compiler.core.models import Document
+from editorial_fit_compiler.core.segmentation import segment_normalized_paragraphs
 
 SUPPORTED_DRAFT_EXTENSIONS: tuple[str, ...] = (".md", ".txt", ".docx")
 _URL_FRAGMENT_RE = re.compile(r"^(?:https?://|www\.)\S*$")
@@ -82,29 +83,6 @@ def normalize_draft_text(raw_text: str) -> str:
     return "\n\n".join(paragraphs)
 
 
-def _paragraphs_from_text(normalized_text: str) -> tuple[Paragraph, ...]:
-    """Create deterministic paragraph spans from normalized text."""
-    segments = re.split(r"\n\s*\n+", normalized_text)
-    paragraphs: list[Paragraph] = []
-    cursor = 0
-    for index, segment in enumerate(segments, start=1):
-        if not segment.strip():
-            continue
-        start = normalized_text.find(segment, cursor)
-        if start < 0:
-            continue
-        end = start + len(segment)
-        paragraph = Paragraph(
-            paragraph_id=f"p{index}",
-            text=segment,
-            start_char=start,
-            end_char=end,
-        )
-        paragraphs.append(paragraph)
-        cursor = end
-    return tuple(paragraphs)
-
-
 def _extract_docx_text(draft_path: Path) -> str:
     """Extract `.docx` paragraph text in source order as normalized draft text."""
     try:
@@ -170,7 +148,7 @@ def load_document_from_text(raw_text: str, *, source_name: str = "<stdin>") -> D
         document_id=f"doc-{source_name.strip('<>') or 'input'}",
         text=normalized_text,
         source_path=source_name,
-        paragraphs=_paragraphs_from_text(normalized_text),
+        paragraphs=segment_normalized_paragraphs(normalized_text),
     )
 
 
