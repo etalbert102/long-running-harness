@@ -70,6 +70,62 @@ def test_detect_undefined_key_terms_respects_definition_window() -> None:
     assert metrics.undefined_key_term_warnings == ()
 
 
+def test_detect_undefined_key_terms_handles_non_pn_paragraph_ids() -> None:
+    """Nearby definitions should be found even when paragraph IDs are not ``pN``."""
+    paragraphs = (
+        Paragraph(
+            paragraph_id="intro-alpha",
+            text="Authority Topology distorts who can act quickly in crisis.",
+            start_char=0,
+            end_char=len("Authority Topology distorts who can act quickly in crisis."),
+            sentences=(),
+        ),
+        Paragraph(
+            paragraph_id="intro-beta",
+            text="Authority Topology is the map of escalation rights in an institution.",
+            start_char=58,
+            end_char=58 + len(
+                "Authority Topology is the map of escalation rights in an institution."
+            ),
+            sentences=(),
+        ),
+    )
+
+    metrics = detect_undefined_key_terms_in_paragraphs(
+        paragraphs,
+        first_paragraph_count=1,
+        definition_window_paragraphs=1,
+    )
+
+    assert metrics.introduced_key_term_count == 1
+    assert metrics.undefined_key_term_count == 0
+    assert metrics.undefined_key_term_warnings == ()
+
+
+def test_detect_undefined_key_terms_segments_crlf_paragraphs() -> None:
+    """CRLF paragraph boundaries should preserve first-N behavior and references."""
+    text = (
+        "Decision Matrix drifts under pressure.\r\n\r\n"
+        "Authority Topology is the map of escalation rights.\r\n\r\n"
+        "A final section discusses implementation."
+    )
+
+    metrics = detect_undefined_key_terms(
+        text,
+        first_paragraph_count=2,
+        definition_window_paragraphs=1,
+    )
+
+    assert metrics.first_paragraph_count == 2
+    assert metrics.introduced_key_term_count == 2
+    assert metrics.undefined_key_term_count == 1
+    assert tuple(warning.term for warning in metrics.undefined_key_term_warnings) == (
+        "Decision Matrix",
+    )
+    assert metrics.undefined_key_term_warnings[0].introduction_paragraph_ids == ("p1",)
+    assert metrics.undefined_key_term_warnings[0].introduction_paragraph_indexes == (1,)
+
+
 @pytest.mark.parametrize(
     ("kwargs", "expected_message"),
     [
@@ -87,4 +143,3 @@ def test_detect_undefined_key_terms_rejects_invalid_parameters(
     """Invalid analyzer parameters should fail fast with actionable errors."""
     with pytest.raises(ValueError, match=expected_message):
         detect_undefined_key_terms("Authority Topology constrains response.", **kwargs)
-

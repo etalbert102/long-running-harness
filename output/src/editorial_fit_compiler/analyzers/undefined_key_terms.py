@@ -13,7 +13,6 @@ _CONNECTOR = r"(?:of|and|the|for|to|in|on|with|without|via)"
 _KEY_TERM_PATTERN = re.compile(
     rf"\b{_TERM_TOKEN}(?:\s+(?:{_CONNECTOR}\s+)?{_TERM_TOKEN}){{1,3}}\b"
 )
-_DEFINITION_VERBS = ("is", "are", "means", "refers to", "describes", "defined as")
 _WORD_RE = re.compile(r"\b[\w']+\b")
 _DEFINITION_TEMPLATES: tuple[str, ...] = (
     "{term} is ",
@@ -146,8 +145,7 @@ def _validate_parameters(
 def _extract_introductions(paragraphs: tuple[Paragraph, ...]) -> tuple[KeyTermIntroduction, ...]:
     """Extract key-term introductions from the selected first paragraphs."""
     introductions: list[KeyTermIntroduction] = []
-    for paragraph in paragraphs:
-        paragraph_index = _paragraph_index(paragraph.paragraph_id)
+    for paragraph_index, paragraph in enumerate(paragraphs, start=1):
         for match in _KEY_TERM_PATTERN.finditer(paragraph.text):
             term = match.group(0)
             if not _is_candidate_term(term):
@@ -248,10 +246,7 @@ def _has_nearby_definition(
 ) -> tuple[bool, int | None]:
     """Check whether a term has a local definition near its introduction."""
     nearest_definition_index: int | None = None
-    for paragraph in paragraph_list:
-        paragraph_index = _paragraph_index(paragraph.paragraph_id)
-        if paragraph_index == 0:
-            continue
+    for paragraph_index, paragraph in enumerate(paragraph_list, start=1):
         if _contains_definition(normalized_term, paragraph.text):
             if nearest_definition_index is None:
                 nearest_definition_index = paragraph_index
@@ -270,32 +265,23 @@ def _contains_definition(normalized_term: str, paragraph_text: str) -> bool:
     return False
 
 
-def _paragraph_index(paragraph_id: str | None) -> int:
-    """Parse integer index from paragraph IDs like ``p3``."""
-    if paragraph_id is None:
-        return 0
-    match = re.fullmatch(r"[pP](\d+)", paragraph_id.strip())
-    if match is None:
-        return 0
-    return int(match.group(1))
-
-
 def _segment_paragraphs(text: str) -> tuple[tuple[str, int], ...]:
     """Segment text into non-empty paragraphs and absolute starts."""
     if not text.strip():
         return ()
-    parts = text.split("\n\n")
     paragraphs: list[tuple[str, int]] = []
     cursor = 0
-    for part in parts:
-        length = len(part)
+    for separator_match in re.finditer(r"(?:\r?\n){2,}", text):
+        part = text[cursor : separator_match.start()]
         if part.strip():
             paragraphs.append((part, cursor))
-        cursor += length + 2
+        cursor = separator_match.end()
+    part = text[cursor:]
+    if part.strip():
+        paragraphs.append((part, cursor))
     return tuple(paragraphs)
 
 
 def _count_words(text: str) -> int:
     """Count words in text for normalization and summary metrics."""
     return len(_WORD_RE.findall(text))
-
