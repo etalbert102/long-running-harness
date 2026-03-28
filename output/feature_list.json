@@ -414,7 +414,7 @@
         "When key-term definition checks run",
         "Then terms lacking local definitions are flagged with paragraph references"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "F033",

@@ -69,6 +69,13 @@ from .structure_metrics import (
     compute_sentence_length_distribution_from_paragraphs,
     compute_structure_metrics,
 )
+from .undefined_key_terms import (
+    KeyTermIntroduction,
+    UndefinedKeyTermMetrics,
+    UndefinedKeyTermWarning,
+    detect_undefined_key_terms,
+    detect_undefined_key_terms_in_paragraphs,
+)
 
 __all__ = [
     "AbstractionPhraseEvidence",
@@ -120,4 +127,9 @@ __all__ = [
     "compute_sentence_length_distribution",
     "compute_sentence_length_distribution_from_paragraphs",
     "compute_structure_metrics",
+    "KeyTermIntroduction",
+    "UndefinedKeyTermMetrics",
+    "UndefinedKeyTermWarning",
+    "detect_undefined_key_terms",
+    "detect_undefined_key_terms_in_paragraphs",
 ]
