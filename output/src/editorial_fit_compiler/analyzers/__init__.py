@@ -44,6 +44,14 @@ from .punctuation_markers import (
     detect_forbidden_punctuation,
     detect_forbidden_punctuation_in_paragraphs,
 )
+from .rhetorical_template_repetition import (
+    RepeatedRhetoricalTemplateWarning,
+    RhetoricalTemplateEvidence,
+    RhetoricalTemplateFrequency,
+    RhetoricalTemplateRepetitionMetrics,
+    detect_repeated_rhetorical_templates,
+    detect_repeated_rhetorical_templates_in_paragraphs,
+)
 from .sentence_opener_repetition import (
     OpenerPatternCluster,
     SentenceOpenerPattern,
@@ -93,6 +101,12 @@ __all__ = [
     "ForbiddenPunctuationMetrics",
     "detect_forbidden_punctuation",
     "detect_forbidden_punctuation_in_paragraphs",
+    "RepeatedRhetoricalTemplateWarning",
+    "RhetoricalTemplateEvidence",
+    "RhetoricalTemplateFrequency",
+    "RhetoricalTemplateRepetitionMetrics",
+    "detect_repeated_rhetorical_templates",
+    "detect_repeated_rhetorical_templates_in_paragraphs",
     "OpenerPatternCluster",
     "SentenceOpenerPattern",
     "SentenceOpenerRepetitionMetrics",

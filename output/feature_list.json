@@ -401,7 +401,7 @@
         "When template analysis runs",
         "Then repeated template frequency is computed and flagged"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "F032",
