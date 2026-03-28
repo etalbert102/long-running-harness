@@ -375,7 +375,7 @@
         "When scaffolding analysis runs",
         "Then phrase counts and repetition warnings are emitted"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "F030",

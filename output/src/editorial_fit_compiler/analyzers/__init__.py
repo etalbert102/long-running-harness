@@ -18,6 +18,13 @@ from .citation_patterns import (
     detect_citation_like_patterns,
     detect_citation_like_patterns_in_paragraphs,
 )
+from .discourse_scaffolding import (
+    DiscourseScaffoldingEvidence,
+    DiscourseScaffoldingMetrics,
+    ScaffoldRepetitionWarning,
+    count_discourse_scaffolding_phrases,
+    count_discourse_scaffolding_phrases_in_paragraphs,
+)
 from .hedge_density import (
     HedgeDensityMetrics,
     HedgeEvidence,
@@ -61,6 +68,11 @@ __all__ = [
     "CitationPatternMetrics",
     "detect_citation_like_patterns",
     "detect_citation_like_patterns_in_paragraphs",
+    "DiscourseScaffoldingEvidence",
+    "DiscourseScaffoldingMetrics",
+    "ScaffoldRepetitionWarning",
+    "count_discourse_scaffolding_phrases",
+    "count_discourse_scaffolding_phrases_in_paragraphs",
     "HedgeDensityMetrics",
     "HedgeEvidence",
     "estimate_hedge_density",
