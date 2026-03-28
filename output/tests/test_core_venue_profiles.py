@@ -40,6 +40,15 @@ def test_load_venue_profile_parses_valid_yaml() -> None:
     assert loaded.score_weights.concreteness == 0.25
 
 
+def test_load_venue_profile_parses_valid_json() -> None:
+    """Loader should parse a valid JSON venue profile into the typed schema."""
+    loaded = load_venue_profile(_fixture_path("valid_profile.json"))
+
+    assert isinstance(loaded, VenueProfile)
+    assert loaded.profile_version == 1
+    assert loaded.venue_id == "smr_json"
+
+
 @pytest.mark.parametrize("missing_field", REQUIRED_TOP_LEVEL_FIELDS)
 def test_load_venue_profile_requires_all_top_level_sections(missing_field: str) -> None:
     """Validation should fail when any required top-level profile section is absent."""
@@ -52,6 +61,24 @@ def test_load_venue_profile_requires_all_score_weight_fields(missing_weight: str
     """Validation should fail when any required score weight field is absent."""
     with pytest.raises(ValidationError, match=missing_weight):
         load_venue_profile(_fixture_path(f"missing_weight_{missing_weight}_profile.yaml"))
+
+
+def test_load_venue_profile_rejects_unsupported_profile_version() -> None:
+    """Validation should return a version error for unsupported profile schema versions."""
+    with pytest.raises(ValidationError, match=r"profile_version|Supported versions: 1"):
+        load_venue_profile(_fixture_path("unsupported_version_profile.json"))
+
+
+def test_load_venue_profile_rejects_non_mapping_top_level_data() -> None:
+    """Loader should fail with a clear error when profile data is not a mapping/object."""
+    with pytest.raises(ValueError, match="top-level mapping/object"):
+        load_venue_profile(_fixture_path("invalid_top_level_profile.json"))
+
+
+def test_load_venue_profile_returns_actionable_schema_errors() -> None:
+    """Invalid profile schema should include actionable nested field error details."""
+    with pytest.raises(ValidationError, match=r"opening_fit|score_weights"):
+        load_venue_profile(_fixture_path("invalid_schema_profile.json"))
 
 
 def _fixture_path(filename: str) -> Path:

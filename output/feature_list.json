@@ -219,7 +219,7 @@
         "When loader is executed",
         "Then valid files load and invalid files return actionable schema errors"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "F018",
