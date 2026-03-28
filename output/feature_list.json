@@ -102,7 +102,7 @@
         "When analyze is invoked",
         "Then the draft content is loaded and normalized into the document model"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "F009",
