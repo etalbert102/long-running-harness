@@ -180,7 +180,7 @@
         "When the default sentence segmenter runs",
         "Then sentence boundaries are produced consistently and fallback logic handles unavailable models"
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "F015",
