@@ -8,7 +8,7 @@ from typing import Iterable
 
 from editorial_fit_compiler.core.models import Paragraph, Sentence
 
-_WORD_RE = re.compile(r"[A-Za-z0-9]+(?:['-][A-Za-z0-9]+)*")
+_WORD_RE = re.compile(r"[^\W_]+(?:['’-][^\W_]+)*", flags=re.UNICODE)
 
 
 @dataclass(frozen=True, slots=True)
@@ -57,12 +57,13 @@ def detect_repeated_sentence_openers(
     min_cluster_occurrences: int = 2,
 ) -> SentenceOpenerRepetitionMetrics:
     """Detect repeated opener patterns among ordered sentences."""
+    sentence_list = tuple(sentences)
     return _build_repetition_metrics(
-        tuple(sentences),
+        sentence_list,
         opener_token_count=opener_token_count,
         nearby_sentence_window=nearby_sentence_window,
         min_cluster_occurrences=min_cluster_occurrences,
-        paragraph_ids=None,
+        paragraph_ids=(None,) * len(sentence_list),
     )
 
 
@@ -76,17 +77,17 @@ def detect_repeated_sentence_openers_in_paragraphs(
     """Detect repeated opener patterns while preserving paragraph linkage."""
     paragraph_list = tuple(paragraphs)
     sentences = tuple(sentence for paragraph in paragraph_list for sentence in paragraph.sentences)
-    sentence_to_paragraph_id: dict[str, str] = {
-        sentence.sentence_id: paragraph.paragraph_id
+    paragraph_ids = tuple(
+        paragraph.paragraph_id
         for paragraph in paragraph_list
-        for sentence in paragraph.sentences
-    }
+        for _sentence in paragraph.sentences
+    )
     return _build_repetition_metrics(
         sentences,
         opener_token_count=opener_token_count,
         nearby_sentence_window=nearby_sentence_window,
         min_cluster_occurrences=min_cluster_occurrences,
-        paragraph_ids=sentence_to_paragraph_id,
+        paragraph_ids=paragraph_ids,
     )
 
 
@@ -96,22 +97,27 @@ def _build_repetition_metrics(
     opener_token_count: int,
     nearby_sentence_window: int,
     min_cluster_occurrences: int,
-    paragraph_ids: dict[str, str] | None,
+    paragraph_ids: tuple[str | None, ...],
 ) -> SentenceOpenerRepetitionMetrics:
     """Materialize opener patterns and repeated nearby clusters for sentences."""
-    normalized_opener_token_count = max(opener_token_count, 1)
-    normalized_nearby_sentence_window = max(nearby_sentence_window, 1)
-    normalized_min_cluster_occurrences = max(min_cluster_occurrences, 2)
+    _validate_repetition_parameters(
+        opener_token_count=opener_token_count,
+        nearby_sentence_window=nearby_sentence_window,
+        min_cluster_occurrences=min_cluster_occurrences,
+    )
+    if len(paragraph_ids) != len(sentences):
+        msg = "paragraph_ids length must match sentences length"
+        raise ValueError(msg)
 
     opener_patterns = _extract_opener_patterns(
         sentences,
-        opener_token_count=normalized_opener_token_count,
+        opener_token_count=opener_token_count,
         paragraph_ids=paragraph_ids,
     )
     repeated_pattern_clusters = _build_clusters(
         opener_patterns,
-        nearby_sentence_window=normalized_nearby_sentence_window,
-        min_cluster_occurrences=normalized_min_cluster_occurrences,
+        nearby_sentence_window=nearby_sentence_window,
+        min_cluster_occurrences=min_cluster_occurrences,
     )
     return SentenceOpenerRepetitionMetrics(
         sentence_count=len(sentences),
@@ -125,11 +131,11 @@ def _extract_opener_patterns(
     sentences: tuple[Sentence, ...],
     *,
     opener_token_count: int,
-    paragraph_ids: dict[str, str] | None,
+    paragraph_ids: tuple[str | None, ...],
 ) -> tuple[SentenceOpenerPattern, ...]:
     """Extract normalized opener patterns from ordered sentences."""
     patterns: list[SentenceOpenerPattern] = []
-    for sentence_index, sentence in enumerate(sentences):
+    for sentence_index, (sentence, paragraph_id) in enumerate(zip(sentences, paragraph_ids)):
         opener = _extract_sentence_opener(sentence.text, opener_token_count=opener_token_count)
         if opener is None:
             continue
@@ -140,12 +146,28 @@ def _extract_opener_patterns(
                 opener=opener,
                 start_char=sentence.start_char,
                 end_char=sentence.end_char,
-                paragraph_id=(
-                    None if paragraph_ids is None else paragraph_ids.get(sentence.sentence_id)
-                ),
+                paragraph_id=paragraph_id,
             )
         )
     return tuple(patterns)
+
+
+def _validate_repetition_parameters(
+    *,
+    opener_token_count: int,
+    nearby_sentence_window: int,
+    min_cluster_occurrences: int,
+) -> None:
+    """Validate analyzer parameters and fail fast on invalid values."""
+    if opener_token_count < 1:
+        msg = "opener_token_count must be at least 1"
+        raise ValueError(msg)
+    if nearby_sentence_window < 1:
+        msg = "nearby_sentence_window must be at least 1"
+        raise ValueError(msg)
+    if min_cluster_occurrences < 2:
+        msg = "min_cluster_occurrences must be at least 2"
+        raise ValueError(msg)
 
 
 def _build_clusters(

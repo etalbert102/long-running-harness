@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import pytest
+
 from editorial_fit_compiler.analyzers import (
     detect_repeated_sentence_openers,
     detect_repeated_sentence_openers_in_paragraphs,
@@ -126,3 +128,69 @@ def test_detect_repeated_sentence_openers_in_paragraphs_tracks_paragraph_ids() -
     assert cluster.severity == "medium"
     assert cluster.sentence_ids == ("s1", "s2", "s3")
     assert cluster.paragraph_ids == ("p1", "p2")
+
+
+def test_detect_repeated_sentence_openers_in_paragraphs_handles_duplicate_sentence_ids() -> None:
+    """Paragraph linkage should remain correct even when sentence IDs repeat across paragraphs."""
+    p1_text = "In this context, the first paragraph opens."
+    p2_text = "In this context, the second paragraph opens."
+    p1_sentences = (_build_sentence("s1", p1_text, 0),)
+    p2_start = len(p1_text) + 2
+    p2_sentences = (_build_sentence("s1", p2_text, p2_start),)
+    paragraphs = (
+        Paragraph(
+            paragraph_id="p1",
+            text=p1_text,
+            start_char=0,
+            end_char=len(p1_text),
+            sentences=p1_sentences,
+        ),
+        Paragraph(
+            paragraph_id="p2",
+            text=p2_text,
+            start_char=p2_start,
+            end_char=p2_start + len(p2_text),
+            sentences=p2_sentences,
+        ),
+    )
+
+    metrics = detect_repeated_sentence_openers_in_paragraphs(paragraphs)
+
+    assert len(metrics.repeated_pattern_clusters) == 1
+    cluster = metrics.repeated_pattern_clusters[0]
+    assert cluster.sentence_ids == ("s1", "s1")
+    assert cluster.paragraph_ids == ("p1", "p2")
+
+
+def test_detect_repeated_sentence_openers_supports_unicode_openers() -> None:
+    """Unicode letters in opener tokens should be preserved for matching."""
+    sentences = (
+        _build_sentence("s1", "Élan vital shapes reform.", 0),
+        _build_sentence("s2", "Élan vital drives consensus.", 28),
+    )
+
+    metrics = detect_repeated_sentence_openers(sentences)
+
+    assert len(metrics.repeated_pattern_clusters) == 1
+    cluster = metrics.repeated_pattern_clusters[0]
+    assert cluster.opener == "élan vital"
+    assert cluster.sentence_ids == ("s1", "s2")
+
+
+@pytest.mark.parametrize(
+    ("kwargs", "expected_message"),
+    [
+        ({"opener_token_count": 0}, "opener_token_count must be at least 1"),
+        ({"nearby_sentence_window": 0}, "nearby_sentence_window must be at least 1"),
+        ({"min_cluster_occurrences": 1}, "min_cluster_occurrences must be at least 2"),
+    ],
+)
+def test_detect_repeated_sentence_openers_rejects_invalid_parameters(
+    kwargs: dict[str, int],
+    expected_message: str,
+) -> None:
+    """Invalid analysis parameters should fail fast with actionable errors."""
+    sentences = (_build_sentence("s1", "In this context, policy adapts slowly.", 0),)
+
+    with pytest.raises(ValueError, match=expected_message):
+        detect_repeated_sentence_openers(sentences, **kwargs)
