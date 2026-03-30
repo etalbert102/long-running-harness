@@ -36,5 +36,7 @@ You will be told which feature to implement via the prompt. The `feature_list.js
 
 After implementing the feature, commit with:
 ```
-git add -A && git commit -m "feat(F{id}): {description}"
+git add src/ tests/ && git commit -m "feat(F{id}): {description}"
 ```
+
+If the project uses other top-level source directories (e.g. `lib/`, `app/`), include them. Do not use `git add -A` — stage only source and test files to avoid committing environment artifacts, caches, or secrets.

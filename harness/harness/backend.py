@@ -14,12 +14,16 @@ from harness.client import (
     get_api_base_url,
     get_api_headers,
     get_api_key,
+    get_anthropic_api_key,
+    get_anthropic_base_url,
+    get_anthropic_version,
+    get_claude_code_oauth_token,
     get_output_dir,
     get_provider,
 )
 from harness.model_policy import select_model
-from harness.runtime import AgentRuntime, RuntimeConfig
-from harness.transports import OpenAICompatibleTransport, TransportError
+from harness.runtime import AgentRuntime, RuntimeConfig, MAX_TURNS_BY_COMPLEXITY
+from harness.transports import AnthropicTransport, OpenAICompatibleTransport, TransportError
 
 logger = logging.getLogger("harness.backend")
 
@@ -77,13 +81,26 @@ def run_agent(
             system_prompt=system_prompt,
             prompt=prompt,
             output_schema=output_schema,
+            complexity=complexity,
+        )
+
+    if provider == "anthropic":
+        return _run_with_anthropic_api(
+            role=role,
+            target_dir=target_dir,
+            model=model,
+            selection_reason=selection_reason,
+            system_prompt=system_prompt,
+            prompt=prompt,
+            output_schema=output_schema,
+            complexity=complexity,
         )
 
     return AgentRunResult(
         output_text="",
         error=(
             f"Unsupported HARNESS_PROVIDER '{provider}'. "
-            "Supported: codex, openai-compatible"
+            "Supported: codex, openai-compatible, anthropic"
         ),
     )
 
@@ -174,6 +191,7 @@ def _run_with_openai_compatible_api(
     system_prompt: str,
     prompt: str,
     output_schema: dict | None,
+    complexity: str | None = None,
 ) -> AgentRunResult:
     base_url = get_api_base_url()
     if not base_url:
@@ -197,10 +215,78 @@ def _run_with_openai_compatible_api(
         api_key=get_api_key() or None,
         headers=get_api_headers(),
     )
+    max_turns = MAX_TURNS_BY_COMPLEXITY.get(complexity or "", RuntimeConfig.max_turns)
     runtime = AgentRuntime(
         transport=transport,
         workspace_root=target_dir,
-        config=RuntimeConfig(),
+        config=RuntimeConfig(max_turns=max_turns),
+    )
+
+    try:
+        response = runtime.run(
+            model=model,
+            role=role,
+            system_prompt=system_prompt,
+            prompt=prompt,
+            output_schema=output_schema,
+        )
+    except TransportError as exc:
+        logger.error("[backend] %s failed: %s", role, exc)
+        return AgentRunResult(output_text="", error=str(exc))
+    except Exception as exc:  # pragma: no cover - defensive path
+        logger.error("[backend] %s failed to start: %s", role, exc)
+        return AgentRunResult(output_text="", error=str(exc))
+
+    return AgentRunResult(output_text=response.content)
+
+
+def _run_with_anthropic_api(
+    *,
+    role: str,
+    target_dir: Path,
+    model: str,
+    selection_reason: str,
+    system_prompt: str,
+    prompt: str,
+    output_schema: dict | None,
+    complexity: str | None = None,
+) -> AgentRunResult:
+    api_key = get_anthropic_api_key()
+    auth_token = ""
+    auth_source = "api-key"
+    if not api_key:
+        auth_token = get_claude_code_oauth_token()
+        auth_source = "claude-code-oauth"
+    if not api_key and not auth_token:
+        return AgentRunResult(
+            output_text="",
+            error=(
+                "HARNESS_ANTHROPIC_API_KEY/HARNESS_API_KEY is required for provider 'anthropic', "
+                "or a local Claude Code OAuth token must exist in ~/.claude/.credentials.json."
+            ),
+        )
+
+    logger.info(
+        "[backend] Running %s via anthropic API in %s with model %s (%s, auth=%s)",
+        role,
+        target_dir,
+        model,
+        selection_reason,
+        auth_source,
+    )
+
+    transport = AnthropicTransport(
+        api_key=api_key or None,
+        auth_token=auth_token or None,
+        base_url=get_anthropic_base_url(),
+        headers=get_api_headers(),
+        anthropic_version=get_anthropic_version(),
+    )
+    max_turns = MAX_TURNS_BY_COMPLEXITY.get(complexity or "", RuntimeConfig.max_turns)
+    runtime = AgentRuntime(
+        transport=transport,
+        workspace_root=target_dir,
+        config=RuntimeConfig(max_turns=max_turns),
     )
 
     try:

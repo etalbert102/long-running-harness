@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import os
+import re
 import subprocess
 from dataclasses import dataclass
 from pathlib import Path
@@ -63,7 +64,7 @@ class WorkspaceTools:
                 "type": "function",
                 "function": {
                     "name": "search_text",
-                    "description": "Search for text in workspace files.",
+                    "description": "Search for text in workspace files using a regex pattern. Falls back to literal substring match if the pattern is not valid regex.",
                     "parameters": {
                         "type": "object",
                         "additionalProperties": False,
@@ -181,6 +182,16 @@ class WorkspaceTools:
         pattern = arguments["pattern"]
         search_root = self._resolve_path(arguments.get("path", "."))
         max_matches = int(arguments.get("max_matches", 200))
+
+        # Compile as regex; fall back to literal substring match if invalid
+        try:
+            compiled = re.compile(pattern)
+            def line_matches(line: str) -> bool:
+                return compiled.search(line) is not None
+        except re.error:
+            def line_matches(line: str) -> bool:  # type: ignore[misc]
+                return pattern in line
+
         matches: list[str] = []
         for path in search_root.rglob("*"):
             if not path.is_file():
@@ -190,7 +201,7 @@ class WorkspaceTools:
             except OSError:
                 continue
             for line_no, line in enumerate(text.splitlines(), start=1):
-                if pattern in line:
+                if line_matches(line):
                     rel = path.relative_to(self.workspace_root)
                     matches.append(f"{rel.as_posix()}:{line_no}:{line.strip()}")
                     if len(matches) >= max_matches:

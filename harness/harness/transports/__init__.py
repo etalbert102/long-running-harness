@@ -1,5 +1,6 @@
 """Transport adapters for model backends."""
 
+from harness.transports.anthropic import AnthropicTransport
 from harness.transports.base import (
     ModelResponse,
     ToolCall,
@@ -8,6 +9,7 @@ from harness.transports.base import (
 from harness.transports.openai_compatible import OpenAICompatibleTransport
 
 __all__ = [
+    "AnthropicTransport",
     "ModelResponse",
     "OpenAICompatibleTransport",
     "ToolCall",

@@ -14,6 +14,14 @@ from harness.transports.base import ModelResponse, TransportError
 logger = logging.getLogger("harness.runtime")
 
 
+MAX_TURNS_BY_COMPLEXITY: dict[str, int] = {
+    "setup": 8,
+    "simple": 12,
+    "moderate": 20,
+    "complex": 24,
+}
+
+
 @dataclass
 class RuntimeConfig:
     """Runtime settings for an agent execution."""

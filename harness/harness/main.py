@@ -60,7 +60,7 @@ def parse_args() -> argparse.Namespace:
         "--provider",
         type=str,
         default="codex",
-        help="Agent backend provider: codex or openai-compatible (default: codex)",
+        help="Agent backend provider: codex, openai-compatible, or anthropic (default: codex)",
     )
     parser.add_argument(
         "--model-policy",
@@ -73,13 +73,19 @@ def parse_args() -> argparse.Namespace:
         "--api-base-url",
         type=str,
         default=None,
-        help="Base URL for an OpenAI-compatible API backend",
+        help="Base URL for a direct API backend (OpenAI-compatible or Anthropic override)",
     )
     parser.add_argument(
         "--api-key",
         type=str,
         default=None,
-        help="API key for an OpenAI-compatible API backend",
+        help="API key for a direct API backend",
+    )
+    parser.add_argument(
+        "--anthropic-version",
+        type=str,
+        default=None,
+        help="Anthropic API version header override",
     )
     parser.add_argument(
         "--api-header",
@@ -182,8 +188,12 @@ def main() -> None:
         os.environ["HARNESS_MODEL_POLICY"] = args.model_policy
     if args.api_base_url:
         os.environ["HARNESS_API_BASE_URL"] = args.api_base_url
+        os.environ["HARNESS_ANTHROPIC_BASE_URL"] = args.api_base_url
     if args.api_key:
         os.environ["HARNESS_API_KEY"] = args.api_key
+        os.environ["HARNESS_ANTHROPIC_API_KEY"] = args.api_key
+    if args.anthropic_version:
+        os.environ["HARNESS_ANTHROPIC_VERSION"] = args.anthropic_version
     if args.api_header:
         import json
 
@@ -212,7 +222,12 @@ def main() -> None:
     if args.model_evaluator_strong:
         os.environ["HARNESS_MODEL_EVALUATOR_STRONG"] = args.model_evaluator_strong
 
-    from harness.client import get_api_base_url, get_model_for_role, get_policy_mode
+    from harness.client import (
+        get_anthropic_base_url,
+        get_api_base_url,
+        get_model_for_role,
+        get_policy_mode,
+    )
     use_multi = args.multi and not args.single
     mode = "single" if args.single else "multi (architect-driven)" if use_multi else "single"
     logger.info(f"Starting harness with spec: {args.spec}")
@@ -221,6 +236,8 @@ def main() -> None:
     logger.info(f"Model policy: {get_policy_mode()}")
     if get_api_base_url():
         logger.info(f"API base URL: {get_api_base_url()}")
+    elif os.environ.get("HARNESS_PROVIDER", "").strip().lower() == "anthropic":
+        logger.info(f"Anthropic base URL: {get_anthropic_base_url()}")
     if args.project_type:
         logger.info(f"Project type override: {args.project_type}")
     logger.info(f"Models — planner: {get_model_for_role('planner')}, generator: {get_model_for_role('generator')}, evaluator: {get_model_for_role('evaluator')}")

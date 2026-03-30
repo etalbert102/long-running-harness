@@ -21,7 +21,7 @@ logger = logging.getLogger("harness.orchestrator")
 # Retry limits
 MAX_VALIDATOR_RETRIES = 3
 MAX_EVALUATOR_RETRIES = 2
-DELAY_BETWEEN_SESSIONS = 3  # seconds
+DELAY_BETWEEN_SESSIONS = 0  # seconds — rate limits are handled by transport retries, not pre-emptive sleeps
 
 
 async def push_git_commits(session_id: str) -> None:

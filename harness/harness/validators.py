@@ -16,7 +16,7 @@ import sys
 from dataclasses import dataclass
 from pathlib import Path
 
-from harness.client import get_output_dir
+from harness.client import get_allowed_sink_wrappers, get_output_dir
 
 logger = logging.getLogger("harness.validators")
 
@@ -200,6 +200,43 @@ def detect_project_profile(cwd: Path | None = None) -> ProjectProfile:
     )
 
 
+async def run_forbidden_sink_scan(cwd: Path | None = None) -> ValidationResult:
+    """Scan generated Python source files for forbidden direct-write sinks."""
+    target = cwd or get_output_dir()
+
+    try:
+        from fidelity_framework_v1 import scan_forbidden_sinks
+    except ImportError:
+        logger.warning("[validators] fidelity_framework_v1 not available — skipping sink scan")
+        return ValidationResult(name="forbidden_sinks", passed=True, output="fidelity_framework_v1 not installed — sink scan skipped")
+
+    allowed_wrappers = get_allowed_sink_wrappers()
+    skip_parts = {".venv", "venv", "__pycache__", "tests"}
+    py_files = [
+        p for p in target.rglob("*.py")
+        if not skip_parts.intersection(p.parts)
+    ]
+
+    all_findings: list[str] = []
+    for path in py_files:
+        try:
+            findings = scan_forbidden_sinks(str(path), allowed_wrappers=allowed_wrappers)
+        except Exception as exc:
+            logger.warning(f"[validators] sink scan error on {path}: {exc}")
+            continue
+        for line_no, line_text, pattern in findings:
+            rel = path.relative_to(target)
+            all_findings.append(f"{rel}:{line_no}  {line_text.strip()}  [pattern: {pattern}]")
+
+    if all_findings:
+        output = "Forbidden sink usage detected:\n" + "\n".join(all_findings)
+        logger.warning(f"[validators] forbidden_sinks: FAIL ({len(all_findings)} violation(s))")
+        return ValidationResult(name="forbidden_sinks", passed=False, output=output)
+
+    logger.info(f"[validators] forbidden_sinks: PASS ({len(py_files)} files scanned)")
+    return ValidationResult(name="forbidden_sinks", passed=True, output=f"No forbidden sinks found ({len(py_files)} files scanned)")
+
+
 async def run_typecheck(cwd: Path | None = None) -> ValidationResult:
     """Run the active type-check or syntax-check command."""
     target = cwd or get_output_dir()
@@ -245,11 +282,12 @@ async def run_all_validators(cwd: Path | None = None) -> list[ValidationResult]:
         logger.warning(f"[validators] Could not infer project type in {target}")
         return [ValidationResult(name="setup", passed=False, output="Could not infer project type from files or spec")]
 
-    typecheck_result, lint_result = await asyncio.gather(
+    typecheck_result, lint_result, sink_result = await asyncio.gather(
         run_typecheck(target),
         run_lint(target),
+        run_forbidden_sink_scan(target),
     )
-    results = [typecheck_result, lint_result]
+    results = [typecheck_result, lint_result, sink_result]
 
     if typecheck_result.passed:
         build_result = await run_build(target)

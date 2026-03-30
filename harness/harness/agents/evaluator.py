@@ -79,11 +79,32 @@ EVALUATION_SCHEMA = {
 
 
 def _parse_evaluation(text: str) -> dict | None:
-    """Extract the JSON evaluation from the evaluator response."""
+    """Extract the JSON evaluation from the evaluator response.
+
+    Handles both raw JSON and responses where the model wraps output in
+    markdown code fences (```json ... ``` or ``` ... ```).
+    """
+    # Try raw parse first
     try:
         return json.loads(text)
     except json.JSONDecodeError:
-        return None
+        pass
+
+    # Strip markdown code fences and retry
+    stripped = text.strip()
+    if stripped.startswith("```"):
+        lines = stripped.splitlines()
+        # Drop opening fence (```json or ```)
+        start = 1
+        # Drop closing fence if present
+        end = len(lines) - 1 if lines[-1].strip() == "```" else len(lines)
+        stripped = "\n".join(lines[start:end]).strip()
+        try:
+            return json.loads(stripped)
+        except json.JSONDecodeError:
+            pass
+
+    return None
 
 
 def _compute_weighted_score(dimension_scores: dict[str, float]) -> float:

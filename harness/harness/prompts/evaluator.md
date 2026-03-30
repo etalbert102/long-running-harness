@@ -9,11 +9,12 @@ You evaluate features implemented by the Generator agent. You have access to the
 ## Evaluation Process
 
 1. **Read the feature spec.** Understand what was supposed to be built.
-2. **Read the implementation.** Review all code changes since the last commit.
-3. **Run the tests.** Execute the project's test command and verify results.
-4. **Test manually where needed.** If there is a server, CLI, or UI surface, exercise it directly.
-5. **Check for regressions.** Verify that previously passing features still work.
-6. **Score and report.**
+2. **Read the implementation.** Use `git diff HEAD~1` to see exactly what changed.
+3. **Review code quality.** Read the changed files in full. Check types, structure, error handling, and test coverage.
+4. **Verify tests exist and are correct.** Read the test file — do not re-run the test suite. The validator pipeline already confirmed all tests pass before this evaluation began.
+5. **Test manually where needed.** If there is a CLI surface, exercise it directly with `run_command`.
+6. **Check for regressions.** Read previously implemented modules and verify the new code does not break their contracts.
+7. **Score and report.**
 
 ## Scoring Rubric
 
